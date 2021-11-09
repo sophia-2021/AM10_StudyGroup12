@@ -1,0 +1,63 @@
+---
+title: "CustomerPersonalityAnalysis_StudyGroup12"
+author: "Akshat Kacheria, Asli Ceren Memis, Jelena Savic, Shengcheng Liu, Shuhan Li, Sophia Kalusche "
+date: "11/9/2021"
+output: html_document
+---
+
+# Introduction
+
+# Background
+
+```{r, setup, include=FALSE}
+knitr::opts_chunk$set(
+  message = FALSE, 
+  warning = FALSE, 
+  tidy=FALSE,     # display code as typed
+  size="small")   # slightly smaller font for code
+options(digits = 3)
+
+# default figure size
+knitr::opts_chunk$set(
+  fig.width=6.75, 
+  fig.height=6.75,
+  fig.align = "center"
+)
+```
+
+
+```{r libraries, include=FALSE}
+library(tidyverse)
+library(extrafont)
+library(vroom)
+library(ggtext)
+library(gapminder)
+library(ggrepel)
+library(patchwork)
+library(gghighlight)
+library(skimr)
+#install.packages("remotes")
+#remotes::install_github("kjhealy/nycdogs")
+library(nycdogs)
+library(sf) # for geospatial visualisation
+
+loadfonts(device="pdf")
+# loadfonts(device="pdf") if you have a mac
+```
+
+##Load the data 
+```{r load data, message=FALSE, warning=FALSE}
+#Load the data 
+customer_characteristics <- utils::read.csv(here::here("data","marketing_campaign.csv"), sep="")
+
+#Glimps and skim to get an initiatl feeling
+glimpse(customer_characteristics)
+skim(customer_characteristics)
+```
+-- @ Team: FYI THESE ARE JUST IDEAS; NO NEED TO FOLLOW THIS --
+# Exploratory analysis 
+## Customer demographics
+## Customer purchasing behavior (items and location)
+
+# Cluster analysis 
+# Campaign effectiveness evaluation
