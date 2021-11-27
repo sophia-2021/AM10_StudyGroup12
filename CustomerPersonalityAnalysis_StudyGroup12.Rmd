@@ -27,22 +27,30 @@ knitr::opts_chunk$set(
 
 
 ```{r libraries, include=FALSE}
-library(tidyverse)
-library(extrafont)
+library(tidyverse) # the usual stuff: dplyr, readr, and other goodies
+library(lubridate) # to handle dates
+library(GGally) # for correlation-scatterplot matrix
+library(car) # vif() function to check for multicolinearity
+library(ggfortify) # to produce residual diagnostic plots
+library(rsample) # to split dataframe in training- & testing sets
+library(here) # to read files and organise data
+library(janitor) # clean_names()
+library(broom) # use broom:augment() to get tidy table with regression output, residuals, etc
+library(huxtable) # to get summary table of all models produced
+library(caret) # to train more advanced models (k-fold cross-validation, stepwise regression, LASSO)
+library(zoo) #to allow for time series operations
+
 library(vroom)
+library(skimr)
+library(sf)
+
+library(extrafont)
 library(ggtext)
-library(gapminder)
 library(ggrepel)
 library(patchwork)
 library(gghighlight)
 library(skimr)
-#install.packages("remotes")
-#remotes::install_github("kjhealy/nycdogs")
-library(nycdogs)
-library(sf) # for geospatial visualisation
 
-loadfonts(device="pdf")
-# loadfonts(device="pdf") if you have a mac
 ```
 
 ##Load the data 
@@ -61,3 +69,154 @@ skim(customer_characteristics)
 
 # Cluster analysis 
 # Campaign effectiveness evaluation
+
+
+# Create own graph template
+```{r create own graphing template, message=FALSE, warning=FALSE, error=FALSE}
+
+loadfonts(device="pdf")
+
+custom_layout <-   theme_minimal() + theme(
+     
+    text=element_text(family = "PT Sans"),
+    plot.title = element_text(face="bold", size = rel(1.5)), 
+    plot.subtitle= element_text(color="grey60", size = rel(1.4)),
+    panel.background = element_blank(),
+    plot.caption = element_text(hjust = 0, size = rel(1), face="italic", color="grey60"), 
+    plot.title.position = "plot", 
+    plot.caption.position =  "plot", 
+    axis.title = element_text(color="grey50", size = rel(1.2)), 
+    axis.ticks= element_line(color="grey50", size = rel(1.2)), 
+    axis.line = element_line(size = 1, colour = "grey80"), 
+    axis.text =element_text(color="grey50", size = rel(0.8)),
+    legend.title = element_text(family = "PT Sans",face = "bold", rel(1.2)))
+
+```
+
+# Economic Indicator Analysis 
+
+SOPHIA'S PART --> WILL CLEAN UP AND COMMENT MORE 
+
+```{r, load_data Economic Indicator, include = FALSE, message=FALSE}
+# Data Source: https://apps.bea.gov/regional/downloadzip.cfm
+
+gdp <- read_csv(here::here("data", "SAGDP1__ALL_AREAS_1997_2020.csv"))
+pce <- read_csv(here::here("data", "SAPCE4__ALL_AREAS_1997_2020.csv"))
+states <- read_csv(here::here("data", "states.csv"))
+state_pop <- read_csv(here::here("data", "2019_Census_US_Population_Data_By_State_Lat_Long.csv"))
+
+#GDP reported in million
+glimpse(gdp)
+glimpse(pce)
+glimpse(states)
+glimpse(state_pop)
+
+#Definitions of regions according to BEA
+#https://apps.bea.gov/regional/docs/msalist.cfm?mlist=2
+new_england <- c("Connecticut", "Maine", "Massachusetts", "New Hampshire", "Rhode Island", "Vermont")
+mideast <- c("Delaware", "District of Columbia", "Maryland", "New Jersey", "New York", "Pennsylvania")
+great_lakes <- c("Illinois", "Indiana", "Michigan", "Ohio", "Wisconsin")
+plains <- c("Iowa", "Kansas", "Minnesota", "Missouri", "Nebraska", "North Dakota", "South Dakota")
+south_east <- c("Alabama", "Arkansas", "Florida", "Georgia", "Kentucky", "Louisiana", "Mississippi", "North Carolina", "South Carolina", "Tennessee", "Virginia", "West Virginia")
+southwest <- c("Arizona", "New Mexico", "Oklahoma", "Texas")
+rocky_mountain <- c("Colorado", "Idaho", "Montana", "Utah", "Wyoming")
+far_west <- c("Alaska", "California", "Hawaii", "Nevada", "Oregon", "Washington")
+
+```
+
+```{r, load_cleaning, include = FALSE, message=FALSE}
+gdp_clean <- gdp %>% 
+  
+  #Clean names
+  janitor::clean_names() %>% 
+  
+  #Filter out row type we need 
+  filter(description=="Real GDP (millions of chained 2012 dollars)") %>% 
+  
+  #Pivot longer to get right data format
+  pivot_longer(cols = starts_with("x"), 
+               names_to = "year", 
+               values_to  = "GDP") %>%  
+  
+  #Delete first letter of year 
+  mutate(year=substring(year, 2), year=lubridate::year(as.Date(year, format="%Y")), 
+         #Convert GDP into billion 
+         GDP=GDP/1000)
+
+#Divide data into state and region level 
+gdp_states <- gdp_clean %>%  filter(!geo_name %in% c("United States", "Far West", "Rocky Mountain", "Southwest","Southeast", "Plains", "Great Lakes", "Mideast", "New England" ))
+
+gdp_regions  <- gdp_clean %>%  filter(geo_name %in% c("United States", "Far West", "Rocky Mountain", "Southwest","Southeast", "Plains", "Great Lakes", "Mideast", "New England" ))
+
+#Join gdp_states with state latitute/longlitude data 
+gdp_states <- gdp_states %>%  left_join(states, by=c("geo_name" = "state"))
+gdp_states_2020 <- gdp_states %>%  filter(year==2020) %>%  filter(!geo_name %in% c("Alaska", "Hawaii"))
+gdp_states_sf <- st_as_sf(gdp_states_2020, 
+                          coords=c("longitude", "latitude"), 
+                          crs=4326) 
+
+
+gdp_states_2020_temp <- gdp_states_2020 %>%  select(geo_name, GDP) 
+glimpse(gdp_states_sf)
+
+#Create dataframe with GDP per capita 
+gdp_perCapita_states_2020 <- gdp_states_2020 %>% left_join(state_pop, by=c("geo_name"="STATE")) %>% 
+  select(!lat, !long) %>% 
+  mutate(GDP_pc=(GDP/POPESTIMATE2019)*1000000000) %>%  select(geo_name, GDP_pc)
+
+#GDP per capita for regions
+region_pop <- state_pop %>%  select(STATE, POPESTIMATE2019) %>%  
+  mutate(region=case_when(
+    STATE %in% new_england ~  "New England", 
+    STATE %in% mideast ~  "Mideast",
+    STATE %in% great_lakes ~  "Great Lakes",
+    STATE %in% plains ~  "Plains",
+    STATE %in% south_east ~  "Southeast",
+    STATE %in% southwest ~  "Southwest",
+    STATE %in% rocky_mountain ~  "Rocky Mountain",
+    STATE %in% far_west ~  "Far West"
+    )) %>%  group_by(region) %>%  summarise(region_pop=sum(POPESTIMATE2019))
+
+
+#Simplification assumption that population is constant 
+gdp_pc_regions <- gdp_regions %>%  
+  filter(geo_name != "United States") %>%  
+  left_join(region_pop, by=c("geo_name" = "region")) %>%  
+  mutate(gdp_pc = GDP/region_pop *1000000000)
+  
+  
+```
+
+```{r, GDP Maps, message=FALSE}
+#GDP MAP OF US 
+states <- read_sf(here::here("data", "cb_2018_us_state_500k.shp")) %>% 
+  filter(!NAME %in% c("Guam", "Hawaii", "Commonwealth of the Northern Mariana Islands", "American Samoa", "United States Virgin Islands", "Alaska", "Puerto Rico"))
+
+states_gdp <- states %>%  left_join(gdp_states_2020_temp, by=c("NAME" = "geo_name"))
+
+us_gdp_map <- ggplot() + 
+  geom_sf(data=states_gdp, aes(fill= GDP)) + 
+  custom_layout + 
+  scale_fill_gradient(low = "#CEE9F7", high = "#0032BF") +
+  coord_sf(datum = NA)+
+   labs(title="California has the highest GDP followed by Texas",
+       subtitle = "GDP in million dollars per state (2020) ", 
+       caption="Source: Bureau of Economic Analysis GDP Data 2020", 
+       fill="GDP ($B)")
+us_gdp_map
+
+#GDP MAP OF US per CAPITA 
+states_gdp_pc <- states %>%  left_join(gdp_perCapita_states_2020, by=c("NAME" = "geo_name"))
+
+us_gdp_map_pc <- ggplot() + 
+  geom_sf(data=states_gdp_pc, aes(fill= GDP_pc)) + 
+  custom_layout + 
+  scale_fill_gradient(low = "#CEE9F7", high = "#0032BF") +
+  coord_sf(datum = NA)+
+   labs(title="DC, New York and Massachusetts have the highest GDP per capita",
+       subtitle = "GDP per capita in dollars per state (2020) ", 
+       caption="Source: Bureau of Economic Analysis GDP Data 2020, US Census 2019", 
+       fill="GDP per capita ($)")
+us_gdp_map_pc
+
+```
