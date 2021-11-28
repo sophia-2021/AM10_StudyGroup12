@@ -104,8 +104,9 @@ set.seed(123)
 km.res <- kmeans(dfc,2, nstart = 10)
 
 fviz_cluster(km.res, dfc, geom = "point",ellipse.type = "norm",repel = TRUE, ggtheme = theme_minimal(), xlab="", ylab="")+
-  ggtitle(label="Customer segments")+
-  scale_color_manual(values=c("tomato", "cornflowerblue"))
+  ggtitle(label="We identified 2 main consumer clusters")+
+  scale_color_manual(values=c("tomato", "cornflowerblue"))+
+  theme(plot.title = element_text(face = "bold"))
 
 
 #transpose
@@ -121,8 +122,9 @@ graphkmeans_2clusters <- ggplot(cluster_centers_t, aes(x=variable, y=value))+
   geom_hline(yintercept=0)+
   theme_minimal()+
   theme(text = element_text(size=10),
-        axis.text.x = element_text(angle=45, hjust=1),)+
-  ggtitle("Customer cluster centers") +
+        axis.text.x = element_text(angle=45, hjust=1),
+        plot.title = element_text(face = "bold"))+
+  ggtitle("Consumers are separated on income, amount spent and \nnumber of children", subtitle="Separation of 2 clusters based on different consumer features") +
   scale_color_manual(values=c("tomato", "cornflowerblue"))+
   labs(y="", x="")
 graphkmeans_2clusters
