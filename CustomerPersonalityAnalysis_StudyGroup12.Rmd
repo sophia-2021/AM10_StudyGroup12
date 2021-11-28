@@ -107,6 +107,14 @@ fviz_cluster(km.res, dfc, geom = "point",ellipse.type = "norm",repel = TRUE, ggt
   ggtitle(label="Customer segments")+
   scale_color_manual(values=c("tomato", "cornflowerblue"))
 
+df1<-df1 %>% 
+  select(-education, -marital_status)
+df1 <- data.frame(scale(df1))
+
+model_kmeans_2clusters <- eclust(df1, "kmeans", k = 2, nstart=50, graph=FALSE)
+#add clusters to the data frame
+dfc_withClusters <- mutate(df1, cluster=as.factor(model_kmeans_2clusters$cluster))
+cluster_centers <- data.frame(cluster=as.factor(c(1:2)),model_kmeans_2clusters$centers)
 
 #transpose
 cluster_centers_t <- cluster_centers %>% gather(variable, value, -cluster, factor_key=TRUE)
