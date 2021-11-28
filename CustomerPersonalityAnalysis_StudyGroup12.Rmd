@@ -96,12 +96,16 @@ custom_layout <-   theme_minimal() + theme(
 # Economic Indicator Analysis 
 
 SOPHIA'S PART --> WILL CLEAN UP AND COMMENT MORE 
+EXPLAIN/WRITE PARAGRAPHS
+UPDATE READEME FILE
+LOOK AT ALCOHOLIC BEVERAGE FROM PCE DATA
 
 ```{r, load_data Economic Indicator, include = FALSE, message=FALSE}
 # Data Source: https://apps.bea.gov/regional/downloadzip.cfm
-
 gdp <- read_csv(here::here("data", "SAGDP1__ALL_AREAS_1997_2020.csv"))
 pce <- read_csv(here::here("data", "SAPCE4__ALL_AREAS_1997_2020.csv"))
+
+# PUT LINKS HERE
 states <- read_csv(here::here("data", "states.csv"))
 state_pop <- read_csv(here::here("data", "2019_Census_US_Population_Data_By_State_Lat_Long.csv"))
 
@@ -187,8 +191,92 @@ gdp_pc_regions <- gdp_regions %>%
   
 ```
 
+```{r, clean pce, message=FALSE, fig.width=8, fig.hight=8}
+
+glimpse(pce)
+pce_clean <- pce %>%
+  
+  #Clean names
+  janitor::clean_names() %>% 
+  
+  mutate(x2020 = as.numeric(x2020)) %>%  
+   
+    #Pivot longer to get right data format
+  pivot_longer(cols = 9:32, 
+               names_to = "year", 
+               values_to  = "Expenditure")  %>% 
+  mutate(year=substring(year, 2), year=lubridate::year(as.Date(year, format="%Y")))
+
+
+glimpse(pce_clean)
+
+pce_total_annual <- pce_clean %>% 
+  filter(description=="Personal consumption expenditures", geo_name =="United States") %>% group_by(year) %>% 
+  #filter(!is.na(Expenditure)) %>%  
+  mutate(population=(sum(region_pop$region_pop)), exp_percapita=Expenditure/population *1000000)
+
+
+pce_pc_short <- pce_total_annual %>% select(year, exp_percapita)
+
+```
+
+```{r, GDP US Graphs, message=FALSE, fig.width=8, fig.hight=8}
+
+#Join GDP, PCE data 
+eco_ind_us <- gdp_regions %>% 
+  filter(geo_name == "United States") %>% 
+  mutate(population=(sum(region_pop$region_pop)), gdp_pc=GDP/population*1000000000) %>% select(year, gdp_pc) %>%
+  #left_join(Inc_pc_us_short, by="year") %>%
+  left_join(pce_pc_short, by="year") %>% 
+  pivot_longer(cols=2:3, names_to="indicator", values_to="value")
+eco_ind_us 
+
+
+#Plot graphs with both indicators 
+  ggplot(eco_ind_us, aes(x=year, y=value, group=indicator, color=indicator)) + 
+    
+  #Create gray background for crisis
+  geom_rect(aes(xmin=2008,xmax=2009.5),
+            ymin=-Inf,ymax=Inf, fill="#E5E6E8", color="#E5E6E8", alpha=0.035) +
+  geom_rect(aes(xmin=2019.5,xmax=2021),
+            ymin=-Inf,ymax=Inf, fill="#E5E6E8", color="#E5E6E8", alpha=0.035) +
+  
+    geom_line(size=1.5) +
+    scale_color_manual(values = c("#E6ADE6", "#024B7C"), 
+                       labels=c("PCE", "GDP"))+
+  custom_layout + 
+   labs(title="Economic growth is slowed down during global economic crisis",
+       subtitle = "GDP and PCE development over time in USA", 
+       x="Time",
+       y="GDP and PCE per capita in $", 
+       caption= "Source: Bureau of Economic Analysis GDP and PCE Data 1997-2020", 
+       color="Economic indicator") +
+    
+  # add the text label on the graph
+  geom_text(
+    data = data.frame(x = 2008.75, y = 58000, label = "Financial Crisis"),
+    aes(x = x, y = y, label = label),
+    colour="grey15",
+    family="PT Sans",
+    hjust = 0.5,
+    lineheight = .8,
+    inherit.aes = FALSE) +
+    
+     geom_text(
+    data = data.frame(x = 2020.2, y = 58000, label = "Covid-19"),
+    aes(x = x, y = y, label = label),
+    colour="grey15",
+    family="PT Sans",
+    hjust = 0.5,
+    lineheight = .8,
+    inherit.aes = FALSE)
+
+```
+
+
+
 ```{r, GDP Maps, message=FALSE}
-#GDP MAP OF US 
+#GDP MAP OF US (total GDP --> economy size)
 states <- read_sf(here::here("data", "cb_2018_us_state_500k.shp")) %>% 
   filter(!NAME %in% c("Guam", "Hawaii", "Commonwealth of the Northern Mariana Islands", "American Samoa", "United States Virgin Islands", "Alaska", "Puerto Rico"))
 
@@ -206,17 +294,20 @@ us_gdp_map <- ggplot() +
 us_gdp_map
 
 #GDP MAP OF US per CAPITA 
-states_gdp_pc <- states %>%  left_join(gdp_perCapita_states_2020, by=c("NAME" = "geo_name"))
+states_gdp_pc <- states %>%  left_join(gdp_perCapita_states_2020, by=c("NAME" = "geo_name")) %>% 
+  #Filter out DC b/c it is not comparable (by far the highest GDP per capita)
+  filter(NAME != "District of Columbia")
 
 us_gdp_map_pc <- ggplot() + 
   geom_sf(data=states_gdp_pc, aes(fill= GDP_pc)) + 
   custom_layout + 
   scale_fill_gradient(low = "#CEE9F7", high = "#0032BF") +
   coord_sf(datum = NA)+
-   labs(title="DC, New York and Massachusetts have the highest GDP per capita",
+   labs(title="Washington DC, New York and Massachusetts have the highest GDP per capita",
        subtitle = "GDP per capita in dollars per state (2020) ", 
        caption="Source: Bureau of Economic Analysis GDP Data 2020, US Census 2019", 
        fill="GDP per capita ($)")
 us_gdp_map_pc
+
 
 ```
