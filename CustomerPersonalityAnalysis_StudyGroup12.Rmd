@@ -37,11 +37,13 @@ library(ggrepel)
 library(patchwork)
 library(gghighlight)
 library(skimr)
+```
 
+```{r cleaning data, include=FALSE}
 #cleanign data
 marketing_campaign <- read_delim("marketing_campaign.csv", 
     "\t", escape_double = FALSE, trim_ws = TRUE)
-View(marketing_campaign)
+#View(marketing_campaign)
 
 glimpse(marketing_campaign)
 
@@ -58,7 +60,7 @@ skim(profile_clean)
 
 ```
 
-#CLusters
+#Clusters
 
 
 ```{r}
@@ -73,7 +75,6 @@ df1['accepted']=df1$accepted_cmp1+df1$accepted_cmp2+df1$accepted_cmp3+df1$accept
 head(df1)
 #getting rid of other columns
 df1=df1[c(-1,-2,-6,-7,-8,-10,-11,-12,-13,-14,-15,-21,-22,-23,-24,-25,-27,-28)]
-
 
 ```
 
@@ -174,6 +175,8 @@ EXPLAIN/WRITE PARAGRAPHS
 UPDATE READEME FILE
 LOOK AT ALCOHOLIC BEVERAGE FROM PCE DATA
 
+## Loading and cleaning economic indicator data 
+
 ```{r, load_data Economic Indicator, include = FALSE, message=FALSE}
 # Data Source: https://apps.bea.gov/regional/downloadzip.cfm
 gdp <- read_csv(here::here("data", "SAGDP1__ALL_AREAS_1997_2020.csv"))
@@ -267,7 +270,7 @@ gdp_pc_regions <- gdp_regions %>%
 
 ```{r, clean pce, message=FALSE, fig.width=8, fig.hight=8}
 
-glimpse(pce)
+#glimpse(pce)
 pce_clean <- pce %>%
   
   #Clean names
@@ -290,8 +293,8 @@ pce_total_annual <- pce_clean %>%
 pce_pc_short <- pce_total_annual %>% select(year, exp_percapita)
 
 ```
-
-```{r, GDP US Graphs, message=FALSE, fig.width=8, fig.hight=8}
+## GDP and PCE over time 
+```{r, GDP US Graphs, message=FALSE, fig.width=6, fig.hight=6}
 
 #Join GDP, PCE data 
 eco_ind_us <- gdp_regions %>% 
@@ -344,7 +347,11 @@ eco_ind_us
 
 ```
 
-```{r, GDP Graphs, message=FALSE, fig.width=8, fig.hight=8}
+## GDP and GDP growth per US region 
+
+Do go a little deeper, we want to analyze GDP growth on region. It becomes visible that different regions have not only different GDP and different GDP per capita but also the average of annual growth over the last 20 years significantly differs, which should be taken into consideration when deciding where to enter the market. 
+
+```{r, GDP Graphs, message=FALSE, fig.width=6, fig.hight=6}
 # GDP over time by region 
 gdp_regions %>%  filter(geo_name != "United States") %>% 
   ggplot(aes(x=year, y=GDP, group=geo_name)) + 
@@ -423,7 +430,12 @@ gdp_pc_regions_growth %>%  ggplot(aes(x=fct_reorder(geo_name, desc(average_annua
     inherit.aes = FALSE)
 ```
 
-```{r, GDP Maps, message=FALSE}
+## US map with GDP and GDP per capita 
+
+Next we plot GDP and GDP per capita on a US map based on states. With this, differences between states become easily visible. Moreover, it is intresting to see how missleading GDP can be as an indication for average wealth when the population size is not considered, given that the two maps look very different from each other. 
+
+```{r, GDP Maps, message=FALSE,  fig.width=6, fig.hight=6}
+
 #GDP MAP OF US (total GDP --> economy size)
 states <- read_sf(here::here("data", "cb_2018_us_state_500k.shp")) %>% 
   filter(!NAME %in% c("Guam", "Hawaii", "Commonwealth of the Northern Mariana Islands", "American Samoa", "United States Virgin Islands", "Alaska", "Puerto Rico"))
@@ -434,7 +446,7 @@ us_gdp_map <- ggplot() +
   geom_sf(data=states_gdp, aes(fill= GDP)) + 
   custom_layout + 
   scale_fill_gradient(low = "#CEE9F7", high = "#0032BF") +
-  coord_sf(datum = NA)+
+  coord_sf(datum = NA) +
    labs(title="California has the highest GDP followed by Texas",
        subtitle = "GDP in million dollars per state (2020) ", 
        caption="Source: Bureau of Economic Analysis GDP Data 2020", 
