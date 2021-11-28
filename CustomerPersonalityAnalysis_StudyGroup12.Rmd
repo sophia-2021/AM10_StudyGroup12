@@ -49,7 +49,7 @@ glimpse(marketing_campaign)
 
 skim(marketing_campaign)
 #we see that income column has 24 NA values, we can remove those rows
-#we also notice that a few year of births are impractically old, we remove all years before 1920
+#we also notice that a few year of births are impractically old, we remove all years before 1925
 
 profile_clean <- marketing_campaign %>% 
   janitor::clean_names() %>% 
@@ -171,11 +171,11 @@ custom_layout <-   theme_minimal() + theme(
 # Economic Indicator Analysis 
 
 SOPHIA'S PART --> WILL CLEAN UP AND COMMENT MORE 
-EXPLAIN/WRITE PARAGRAPHS
-UPDATE READEME FILE
-LOOK AT ALCOHOLIC BEVERAGE FROM PCE DATA
+
 
 ## Loading and cleaning economic indicator data 
+
+Before we can start with the analysis, we load and clean the data. 
 
 ```{r, load_data Economic Indicator, include = FALSE, message=FALSE}
 # Data Source: https://apps.bea.gov/regional/downloadzip.cfm
@@ -294,6 +294,8 @@ pce_pc_short <- pce_total_annual %>% select(year, exp_percapita)
 
 ```
 ## GDP and PCE over time 
+
+First, we want to get a feeling of who GDP and PCE (Personal Consumption Expenditure) is developing over time in the US to get a better feeling of the economic situation in the US. 
 ```{r, GDP US Graphs, message=FALSE, fig.width=6, fig.hight=6}
 
 #Join GDP, PCE data 
@@ -375,7 +377,6 @@ pce_alc <- pce_alc %>% select(geo_name, year, description, Expenditure) %>%
   mutate(Alc_pct=Alc_beverages/PCE*100)
 
 
-
 #GRAPH ALCOHOL SPENDING AS % OF TOTAL SPENDING 
 pce_alc %>%  filter(geo_name=="United States") %>%  
   ggplot(aes(x=year, y=Alc_pct)) +
@@ -392,7 +393,7 @@ pce_alc %>%  filter(geo_name=="United States") %>%
    labs(title="Alcohol spending increases in times of crisis",
        subtitle = "Proportion of alcohol beverage spending of total Consumption Expenditures over time in USA", 
        x="Time",
-       y="Percent of alcoholic beverage spending of total consumption expenditure", 
+       y="Alcoholic beverage spending (in %)", 
        caption= "Source: Bureau of Economic Analysis Personal Consumption Expenditures Data 1997-2020") +
   
     # add the text label on the graph
@@ -424,7 +425,6 @@ pce_alc %>%  filter(geo_name=="United States") %>%
     inherit.aes = FALSE)
 
 ```
-
 
 ## GDP and GDP growth per US region 
 
@@ -550,6 +550,142 @@ us_gdp_map_pc
 
 
 ```
+
+
+# Retailer Data Analyis
+
+We move on to analyse the data of an retailer to gain more information about what customers spend money on wine. 
+
+```{r cleaning data, include=FALSE}
+#cleanign data
+marketing_campaign <- read_delim("marketing_campaign.csv", 
+    "\t", escape_double = FALSE, trim_ws = TRUE)
+#View(marketing_campaign)
+
+glimpse(marketing_campaign)
+
+skim(marketing_campaign)
+#we see that income column has 24 NA values, we can remove those rows
+#we also notice that a few year of births are impractically old, we remove all years before 1925
+
+profile_clean <- marketing_campaign %>% 
+  janitor::clean_names() %>% 
+  drop_na(income) %>% 
+  filter(year_birth > 1925)
+
+skim(profile_clean)
+
+```
+
+## Food basket analysis 
+```{r customer food basket, include=FALSE, fig.width=6, fig.height=4}
+#ORDER BOXPLOT FROM HIGHEST TO LOWEST
+#COLOR WINE BOXPLOT
+#CHANGE X AXIS LABELS 
+
+# Calculate total food basket and proportions of every category 
+customer_food_basked <- profile_clean %>%  select(id,mnt_wines,mnt_fruits,mnt_meat_products,mnt_fish_products, mnt_sweet_products) %>% 
+  mutate(food_basket=mnt_wines+mnt_fruits+mnt_meat_products+mnt_fish_products+mnt_sweet_products, 
+         wine_prop=mnt_wines/food_basket, 
+         fruit_prop=mnt_fruits/food_basket, 
+         meat_prop=mnt_meat_products/food_basket, 
+         fish_prop=mnt_fish_products/food_basket, 
+         sweet_prop=mnt_sweet_products/food_basket)
+
+#Plot proportion distribution 
+customer_food_basked %>%select(id, wine_prop, fruit_prop, meat_prop, fish_prop, sweet_prop) %>%  
+  pivot_longer(cols=2:6, names_to="type", values_to="proportion") %>%  ggplot(aes(y=proportion, x=type, group=type)) + 
+  geom_boxplot() + 
+  custom_layout + 
+  labs(title="Wine has highest proportion indicating that retailer is a delicatessen or specialized vendor",
+       subtitle = "Proportion of food basket by food category", 
+       caption="Source: Customer Personality Analysis Data Set", 
+       x= "Food category", 
+       y= "Proportion of food basket")
+
+```
+## Wine customer analysis 
+
+We know know that the customers of the retailer do appear to purchase a lot ot wine, hence we want to use the data to gain more insights on what characteristics the high wine spenders have, which we could then ultimately use to target our customers. 
+
+```{r, rconsumer personality analysis data 2, fig.width=6, fig.height=6}
+
+#CHANGE ORDER 
+#COLOR WIDOW AND DICORED 
+#ANNOTATION
+
+#MARITAL STATUS
+#We will use median as the data appears to be highly skewed 
+profile_clean %>% group_by(marital_status) %>%  summarise(median=median(mnt_wines), count=n()) %>%  filter(marital_status %in% c("Divorced", "Married", "Single","Together", "Widow")) %>% ggplot(aes(x=marital_status, y=median)) + 
+  geom_col() + 
+  custom_layout +
+  labs(title="XXXXXXXX",
+       subtitle = "Median wine spending by marital stuatus", 
+       caption="Source: Customer Personality Analysis Data Set", 
+       x= "Marital status", 
+       y= "Median wine spending")
+
+#EDUCATION
+profile_clean %>% group_by(education) %>%  summarise(median=median(mnt_wines), count=n()) %>%  filter(education %in% c("2n Cycle", "Graduation", "Master","PhD")) %>% ggplot(aes(x=education, y=median)) + 
+  geom_col() + 
+  custom_layout +
+  labs(title="XXXXXXXX",
+       subtitle = "Median wine spending by education level", 
+       caption="Source: Customer Personality Analysis Data Set", 
+       x= "Education level", 
+       y= "Median wine spending") 
+
+#BY CHILDREN AT HOME 
+profile_clean %>% group_by(kidhome) %>%  summarise(median=median(mnt_wines), count=n()) %>%   ggplot(aes(x=as.factor(kidhome), y=median)) + 
+  geom_col() + 
+  custom_layout +
+  labs(title="XXXXXXXX",
+       subtitle = "Median wine spending by number of children", 
+       caption="Source: Customer Personality Analysis Data Set", 
+       x= "Number of children at home", 
+       y= "Median wine spending") 
+
+#BY TEEN AT HOME 
+profile_clean %>% group_by(teenhome) %>%  summarise(median=median(mnt_wines), count=n()) %>%   ggplot(aes(x=as.factor(teenhome), y=median)) + 
+  geom_col() + 
+  custom_layout +
+  labs(title="XXXXXXXX",
+       subtitle = "Median wine spending by number of teenager", 
+       caption="Source: Customer Personality Analysis Data Set", 
+       x= "Number of teenager at home", 
+       y= "Median wine spending") 
+
+#We will add column age and child for further analysis 
+profile_clean['Age']= 2021-profile_clean$year_birth
+profile_clean['Child']=profile_clean$kidhome+profile_clean$teenhome
+
+
+#BY CHILDREN AT HOME (KIDS+TEENAGERS)
+profile_clean %>% group_by(Child) %>%  summarise(median=median(mnt_wines), count=n()) %>%   ggplot(aes(x=as.factor(Child), y=median)) + 
+  geom_col() + 
+  custom_layout +
+  labs(title="XXXXXXXX",
+       subtitle = "Median wine spending by number of children", 
+       caption="Source: Customer Personality Analysis Data Set", 
+       x= "Number of children at home", 
+       y= "Median wine spending") 
+
+#BY AGE (only look at 30-70 because other categories are too small (not enough data))
+profile_clean %>% group_by(Age) %>%  summarise(median=median(mnt_wines), count=n()) %>%   ggplot(aes(x=as.factor(Age), y=median)) + 
+  geom_col() + 
+  custom_layout +
+  labs(title="XXXXXXXX",
+       subtitle = "Median wine spending by age", 
+       caption="Source: Customer Personality Analysis Data Set", 
+       x= "Age", 
+       y= "Median wine spending") 
+
+## ADD MEDIAN WINE SPENDING BY AGE 
+## ADD MEDIAN WINE SPENDING BY INCOME 
+
+```
+
+
 
 ```{r, read the consumer personality analysis data}
 library("readr")
