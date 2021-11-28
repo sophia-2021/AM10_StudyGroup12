@@ -11,22 +11,34 @@ output: html_document
 
 ```{r setup, include=FALSE, warning=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+```
 
-library(tidyverse)
-library(lubridate)
-library(janitor)
+```{r libraries, include=FALSE}
+library(tidyverse) # the usual stuff: dplyr, readr, and other goodies
+library(lubridate) # to handle dates
+library(GGally) # for correlation-scatterplot matrix
+library(car) # vif() function to check for multicolinearity
+library(ggfortify) # to produce residual diagnostic plots
+library(rsample) # to split dataframe in training- & testing sets
+library(here) # to read files and organise data
+library(janitor) # clean_names()
+library(broom) # use broom:augment() to get tidy table with regression output, residuals, etc
+library(huxtable) # to get summary table of all models produced
+library(caret) # to train more advanced models (k-fold cross-validation, stepwise regression, LASSO)
+library(zoo) #to allow for time series operations
+
 library(vroom)
 library(skimr)
 library(sf)
-library(leaflet)
-library(tmap)
-library(tmaptools)
-library(hrbrthemes)
-library(mapview)
-library(viridis)
-library(knitr)
 
-library(readr)
+library(extrafont)
+library(ggtext)
+library(ggrepel)
+library(patchwork)
+library(gghighlight)
+library(skimr)
+
+#cleanign data
 marketing_campaign <- read_delim("marketing_campaign.csv", 
     "\t", escape_double = FALSE, trim_ws = TRUE)
 View(marketing_campaign)
@@ -46,9 +58,11 @@ skim(profile_clean)
 
 ```
 
+#CLusters
 
 
 ```{r}
+#combining some columns into 1 
 df1=na.omit(profile_clean)
 df1['Age']= 2021-df1$year_birth
 df1['Child']=df1$kidhome+df1$teenhome
@@ -57,11 +71,12 @@ df1['total_spent']=df1$mnt_meat_products+df1$mnt_fish_products+df1$mnt_wines+df1
 
 df1['accepted']=df1$accepted_cmp1+df1$accepted_cmp2+df1$accepted_cmp3+df1$accepted_cmp4+df1$accepted_cmp5
 head(df1)
-
+#getting rid of other columns
 df1=df1[c(-1,-2,-6,-7,-8,-10,-11,-12,-13,-14,-15,-21,-22,-23,-24,-25,-27,-28)]
 
 
 ```
+
 
 
 
@@ -131,3 +146,323 @@ graphkmeans_2clusters
 ```
   
   
+
+# Cluster analysis 
+# Campaign effectiveness evaluation
+
+
+# Create own graph template
+```{r create own graphing template, message=FALSE, warning=FALSE, error=FALSE}
+
+loadfonts(device="pdf")
+
+custom_layout <-   theme_minimal() + theme(
+     
+    text=element_text(family = "PT Sans"),
+    plot.title = element_text(face="bold", size = rel(1.5)), 
+    plot.subtitle= element_text(color="grey60", size = rel(1.4)),
+    panel.background = element_blank(),
+    plot.caption = element_text(hjust = 0, size = rel(1), face="italic", color="grey60"), 
+    plot.title.position = "plot", 
+    plot.caption.position =  "plot", 
+    axis.title = element_text(color="grey50", size = rel(1.2)), 
+    axis.ticks= element_line(color="grey50", size = rel(1.2)), 
+    axis.line = element_line(size = 1, colour = "grey80"), 
+    axis.text =element_text(color="grey50", size = rel(0.8)),
+    legend.title = element_text(family = "PT Sans",face = "bold", rel(1.2)))
+
+```
+
+# Economic Indicator Analysis 
+
+SOPHIA'S PART --> WILL CLEAN UP AND COMMENT MORE 
+EXPLAIN/WRITE PARAGRAPHS
+UPDATE READEME FILE
+LOOK AT ALCOHOLIC BEVERAGE FROM PCE DATA
+
+```{r, load_data Economic Indicator, include = FALSE, message=FALSE}
+# Data Source: https://apps.bea.gov/regional/downloadzip.cfm
+gdp <- read_csv(here::here("data", "SAGDP1__ALL_AREAS_1997_2020.csv"))
+pce <- read_csv(here::here("data", "SAPCE4__ALL_AREAS_1997_2020.csv"))
+
+# PUT LINKS HERE
+states <- read_csv(here::here("data", "states.csv"))
+state_pop <- read_csv(here::here("data", "2019_Census_US_Population_Data_By_State_Lat_Long.csv"))
+
+#GDP reported in million
+glimpse(gdp)
+glimpse(pce)
+glimpse(states)
+glimpse(state_pop)
+
+#Definitions of regions according to BEA
+#https://apps.bea.gov/regional/docs/msalist.cfm?mlist=2
+new_england <- c("Connecticut", "Maine", "Massachusetts", "New Hampshire", "Rhode Island", "Vermont")
+mideast <- c("Delaware", "District of Columbia", "Maryland", "New Jersey", "New York", "Pennsylvania")
+great_lakes <- c("Illinois", "Indiana", "Michigan", "Ohio", "Wisconsin")
+plains <- c("Iowa", "Kansas", "Minnesota", "Missouri", "Nebraska", "North Dakota", "South Dakota")
+south_east <- c("Alabama", "Arkansas", "Florida", "Georgia", "Kentucky", "Louisiana", "Mississippi", "North Carolina", "South Carolina", "Tennessee", "Virginia", "West Virginia")
+southwest <- c("Arizona", "New Mexico", "Oklahoma", "Texas")
+rocky_mountain <- c("Colorado", "Idaho", "Montana", "Utah", "Wyoming")
+far_west <- c("Alaska", "California", "Hawaii", "Nevada", "Oregon", "Washington")
+
+```
+
+```{r, load_cleaning, include = FALSE, message=FALSE}
+gdp_clean <- gdp %>% 
+  
+  #Clean names
+  janitor::clean_names() %>% 
+  
+  #Filter out row type we need 
+  filter(description=="Real GDP (millions of chained 2012 dollars)") %>% 
+  
+  #Pivot longer to get right data format
+  pivot_longer(cols = starts_with("x"), 
+               names_to = "year", 
+               values_to  = "GDP") %>%  
+  
+  #Delete first letter of year 
+  mutate(year=substring(year, 2), year=lubridate::year(as.Date(year, format="%Y")), 
+         #Convert GDP into billion 
+         GDP=GDP/1000)
+
+#Divide data into state and region level 
+gdp_states <- gdp_clean %>%  filter(!geo_name %in% c("United States", "Far West", "Rocky Mountain", "Southwest","Southeast", "Plains", "Great Lakes", "Mideast", "New England" ))
+
+gdp_regions  <- gdp_clean %>%  filter(geo_name %in% c("United States", "Far West", "Rocky Mountain", "Southwest","Southeast", "Plains", "Great Lakes", "Mideast", "New England" ))
+
+#Join gdp_states with state latitute/longlitude data 
+gdp_states <- gdp_states %>%  left_join(states, by=c("geo_name" = "state"))
+gdp_states_2020 <- gdp_states %>%  filter(year==2020) %>%  filter(!geo_name %in% c("Alaska", "Hawaii"))
+gdp_states_sf <- st_as_sf(gdp_states_2020, 
+                          coords=c("longitude", "latitude"), 
+                          crs=4326) 
+
+
+gdp_states_2020_temp <- gdp_states_2020 %>%  select(geo_name, GDP) 
+glimpse(gdp_states_sf)
+
+#Create dataframe with GDP per capita 
+gdp_perCapita_states_2020 <- gdp_states_2020 %>% left_join(state_pop, by=c("geo_name"="STATE")) %>% 
+  select(!lat, !long) %>% 
+  mutate(GDP_pc=(GDP/POPESTIMATE2019)*1000000000) %>%  select(geo_name, GDP_pc)
+
+#GDP per capita for regions
+region_pop <- state_pop %>%  select(STATE, POPESTIMATE2019) %>%  
+  mutate(region=case_when(
+    STATE %in% new_england ~  "New England", 
+    STATE %in% mideast ~  "Mideast",
+    STATE %in% great_lakes ~  "Great Lakes",
+    STATE %in% plains ~  "Plains",
+    STATE %in% south_east ~  "Southeast",
+    STATE %in% southwest ~  "Southwest",
+    STATE %in% rocky_mountain ~  "Rocky Mountain",
+    STATE %in% far_west ~  "Far West"
+    )) %>%  group_by(region) %>%  summarise(region_pop=sum(POPESTIMATE2019))
+
+
+#Simplification assumption that population is constant 
+gdp_pc_regions <- gdp_regions %>%  
+  filter(geo_name != "United States") %>%  
+  left_join(region_pop, by=c("geo_name" = "region")) %>%  
+  mutate(gdp_pc = GDP/region_pop *1000000000)
+  
+  
+```
+
+```{r, clean pce, message=FALSE, fig.width=8, fig.hight=8}
+
+glimpse(pce)
+pce_clean <- pce %>%
+  
+  #Clean names
+  janitor::clean_names() %>% 
+  
+  mutate(x2020 = as.numeric(x2020)) %>%  
+   
+    #Pivot longer to get right data format
+  pivot_longer(cols = 9:32, 
+               names_to = "year", 
+               values_to  = "Expenditure")  %>% 
+  mutate(year=substring(year, 2), year=lubridate::year(as.Date(year, format="%Y")))
+
+pce_total_annual <- pce_clean %>% 
+  filter(description=="Personal consumption expenditures", geo_name =="United States") %>% group_by(year) %>% 
+  #filter(!is.na(Expenditure)) %>%  
+  mutate(population=(sum(region_pop$region_pop)), exp_percapita=Expenditure/population *1000000)
+
+
+pce_pc_short <- pce_total_annual %>% select(year, exp_percapita)
+
+```
+
+```{r, GDP US Graphs, message=FALSE, fig.width=8, fig.hight=8}
+
+#Join GDP, PCE data 
+eco_ind_us <- gdp_regions %>% 
+  filter(geo_name == "United States") %>% 
+  mutate(population=(sum(region_pop$region_pop)), gdp_pc=GDP/population*1000000000) %>% select(year, gdp_pc) %>%
+  #left_join(Inc_pc_us_short, by="year") %>%
+  left_join(pce_pc_short, by="year") %>% 
+  pivot_longer(cols=2:3, names_to="indicator", values_to="value")
+eco_ind_us 
+
+
+#Plot graphs with both indicators 
+  ggplot(eco_ind_us, aes(x=year, y=value, group=indicator, color=indicator)) + 
+    
+  #Create gray background for crisis
+  geom_rect(aes(xmin=2008,xmax=2009.5),
+            ymin=-Inf,ymax=Inf, fill="#E5E6E8", color="#E5E6E8", alpha=0.035) +
+  geom_rect(aes(xmin=2019.5,xmax=2021),
+            ymin=-Inf,ymax=Inf, fill="#E5E6E8", color="#E5E6E8", alpha=0.035) +
+  
+    geom_line(size=1.5) +
+    scale_color_manual(values = c("#E6ADE6", "#024B7C"), 
+                       labels=c("PCE", "GDP"))+
+  custom_layout + 
+   labs(title="Economic growth is slowed down during global economic crisis",
+       subtitle = "GDP and PCE development over time in USA", 
+       x="Time",
+       y="GDP and PCE per capita in $", 
+       caption= "Source: Bureau of Economic Analysis GDP and PCE Data 1997-2020", 
+       color="Economic indicator") +
+    
+  # add the text label on the graph
+  geom_text(
+    data = data.frame(x = 2008.75, y = 58000, label = "Financial Crisis"),
+    aes(x = x, y = y, label = label),
+    colour="grey15",
+    family="PT Sans",
+    hjust = 0.5,
+    lineheight = .8,
+    inherit.aes = FALSE) +
+    
+     geom_text(
+    data = data.frame(x = 2020.2, y = 58000, label = "Covid-19"),
+    aes(x = x, y = y, label = label),
+    colour="grey15",
+    family="PT Sans",
+    hjust = 0.5,
+    lineheight = .8,
+    inherit.aes = FALSE)
+
+```
+
+```{r, GDP Graphs, message=FALSE, fig.width=8, fig.hight=8}
+# GDP over time by region 
+gdp_regions %>%  filter(geo_name != "United States") %>% 
+  ggplot(aes(x=year, y=GDP, group=geo_name)) + 
+  geom_line(aes(color=geo_name)) +
+  custom_layout + 
+   labs(title="Southeast has the highest GDP",
+       subtitle = "GDP development over time by region", 
+       x="Time",
+       y="GDP in $B", 
+       caption= "Source: Bureau of Economic Analysis GDP Data 1997-2020", 
+       color= "Regions")
+
+# GDP per capita over time by region 
+gdp_pc_regions %>%
+  ggplot(aes(x=year, y=gdp_pc, group=geo_name)) + 
+  geom_line(aes(color=geo_name)) +
+  custom_layout + 
+   labs(title="Far West, Mideast and New England have the highest GDP per capita",
+       subtitle = "GDP per capita development over time by region", 
+       x="Time",
+       y="GDP per capita in $", 
+       caption= "Source: Bureau of Economic Analysis GDP Data 1997-2020", 
+       color= "Regions")
+
+
+# GDP per capita increase from last for first for all regions  
+gdp_pc_regions_growth <- gdp_pc_regions %>% 
+  filter(year %in% c(2020, 1997)) %>%  
+  group_by(region) %>% 
+  
+  #pivot wider to calculate change over years 
+  pivot_wider(names_from=year, values_from=c(gdp_pc, GDP)) %>%  
+  select(geo_name, gdp_pc_1997, gdp_pc_2020) %>%
+  
+  #calculate cagr and av. annual growth 
+  mutate(cagr=(gdp_pc_2020/gdp_pc_1997)^(1/(2020-1997)-1), average_annual_growth=((gdp_pc_2020-gdp_pc_1997)/gdp_pc_1997)/(2020-1997)) %>%  
+  mutate(blue=ifelse(geo_name %in% c("Southwest","Rocky Mountain", "Far West"), TRUE, FALSE))
+  
+#Plot findings from abovefct_reorder(country, beer_servings)
+my_colours <- c("grey70", "#093172")
+label <- "Growth mainly driven by Tech and Oil industry growth\n over the two decades"
+
+gdp_pc_regions_growth %>%  ggplot(aes(x=fct_reorder(geo_name, desc(average_annual_growth)), y=average_annual_growth, fill=blue))+ 
+  geom_col() +
+  scale_y_continuous(labels = scales::percent)+
+  scale_fill_manual(values = my_colours)+
+   custom_layout + 
+  theme(
+    axis.title.y = element_blank(), 
+    legend.position = "none" 
+  )+
+   labs(title="The West experienced higher GDP per capita growth over the last 20 years",
+       subtitle = "GDP per capita development over time by region", 
+       x="Regions",
+       y="Annual GDP per capita growth rate (1997-2020)", 
+       caption= "Source: Bureau of Economic Analysis GDP Data 1997-2020")+ 
+  
+  #add arrow to graph
+   geom_curve(
+    data = data.frame(x = 6, y = 0.03, xend = 3.7, yend = 0.038),
+    mapping = aes(x = x, y = y, xend = xend, yend = yend),
+    colour = "grey15",
+    size = 0.5,
+    curvature = 0.25,
+    arrow = arrow(length = unit(2, "mm"), type = "closed"),
+    inherit.aes = FALSE ) + 
+  
+    # add the text label on the graph
+  geom_text(
+    data = data.frame(x = 6, y = 0.028, label = label),
+    aes(x = x, y = y, label = label),
+    colour="grey15",
+    family="PT Sans",
+    hjust = 0.5,
+    lineheight = .8,
+    inherit.aes = FALSE)
+```
+
+```{r, GDP Maps, message=FALSE}
+#GDP MAP OF US (total GDP --> economy size)
+states <- read_sf(here::here("data", "cb_2018_us_state_500k.shp")) %>% 
+  filter(!NAME %in% c("Guam", "Hawaii", "Commonwealth of the Northern Mariana Islands", "American Samoa", "United States Virgin Islands", "Alaska", "Puerto Rico"))
+
+states_gdp <- states %>%  left_join(gdp_states_2020_temp, by=c("NAME" = "geo_name"))
+
+us_gdp_map <- ggplot() + 
+  geom_sf(data=states_gdp, aes(fill= GDP)) + 
+  custom_layout + 
+  scale_fill_gradient(low = "#CEE9F7", high = "#0032BF") +
+  coord_sf(datum = NA)+
+   labs(title="California has the highest GDP followed by Texas",
+       subtitle = "GDP in million dollars per state (2020) ", 
+       caption="Source: Bureau of Economic Analysis GDP Data 2020", 
+       fill="GDP ($B)")
+us_gdp_map
+
+#GDP MAP OF US per CAPITA 
+states_gdp_pc <- states %>%  left_join(gdp_perCapita_states_2020, by=c("NAME" = "geo_name")) %>% 
+  #Filter out DC b/c it is not comparable (by far the highest GDP per capita)
+  filter(NAME != "District of Columbia")
+
+us_gdp_map_pc <- ggplot() + 
+  geom_sf(data=states_gdp_pc, aes(fill= GDP_pc)) + 
+  custom_layout + 
+  scale_fill_gradient(low = "#CEE9F7", high = "#0032BF") +
+  coord_sf(datum = NA)+
+   labs(title="Washington DC, New York and Massachusetts have the highest GDP per capita",
+       subtitle = "GDP per capita in dollars per state (2020) ", 
+       caption="Source: Bureau of Economic Analysis GDP Data 2020, US Census 2019", 
+       fill="GDP per capita ($)")
+us_gdp_map_pc
+
+
+```
+
