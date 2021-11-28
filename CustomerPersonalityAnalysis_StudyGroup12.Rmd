@@ -207,9 +207,6 @@ pce_clean <- pce %>%
                values_to  = "Expenditure")  %>% 
   mutate(year=substring(year, 2), year=lubridate::year(as.Date(year, format="%Y")))
 
-
-glimpse(pce_clean)
-
 pce_total_annual <- pce_clean %>% 
   filter(description=="Personal consumption expenditures", geo_name =="United States") %>% group_by(year) %>% 
   #filter(!is.na(Expenditure)) %>%  
@@ -273,7 +270,84 @@ eco_ind_us
 
 ```
 
+```{r, GDP Graphs, message=FALSE, fig.width=8, fig.hight=8}
+# GDP over time by region 
+gdp_regions %>%  filter(geo_name != "United States") %>% 
+  ggplot(aes(x=year, y=GDP, group=geo_name)) + 
+  geom_line(aes(color=geo_name)) +
+  custom_layout + 
+   labs(title="Southeast has the highest GDP",
+       subtitle = "GDP development over time by region", 
+       x="Time",
+       y="GDP in $B", 
+       caption= "Source: Bureau of Economic Analysis GDP Data 1997-2020", 
+       color= "Regions")
 
+# GDP per capita over time by region 
+gdp_pc_regions %>%
+  ggplot(aes(x=year, y=gdp_pc, group=geo_name)) + 
+  geom_line(aes(color=geo_name)) +
+  custom_layout + 
+   labs(title="Far West, Mideast and New England have the highest GDP per capita",
+       subtitle = "GDP per capita development over time by region", 
+       x="Time",
+       y="GDP per capita in $", 
+       caption= "Source: Bureau of Economic Analysis GDP Data 1997-2020", 
+       color= "Regions")
+
+
+# GDP per capita increase from last for first for all regions  
+gdp_pc_regions_growth <- gdp_pc_regions %>% 
+  filter(year %in% c(2020, 1997)) %>%  
+  group_by(region) %>% 
+  
+  #pivot wider to calculate change over years 
+  pivot_wider(names_from=year, values_from=c(gdp_pc, GDP)) %>%  
+  select(geo_name, gdp_pc_1997, gdp_pc_2020) %>%
+  
+  #calculate cagr and av. annual growth 
+  mutate(cagr=(gdp_pc_2020/gdp_pc_1997)^(1/(2020-1997)-1), average_annual_growth=((gdp_pc_2020-gdp_pc_1997)/gdp_pc_1997)/(2020-1997)) %>%  
+  mutate(blue=ifelse(geo_name %in% c("Southwest","Rocky Mountain", "Far West"), TRUE, FALSE))
+  
+#Plot findings from abovefct_reorder(country, beer_servings)
+my_colours <- c("grey70", "#093172")
+label <- "Growth mainly driven by Tech and Oil industry growth\n over the two decades"
+
+gdp_pc_regions_growth %>%  ggplot(aes(x=fct_reorder(geo_name, desc(average_annual_growth)), y=average_annual_growth, fill=blue))+ 
+  geom_col() +
+  scale_y_continuous(labels = scales::percent)+
+  scale_fill_manual(values = my_colours)+
+   custom_layout + 
+  theme(
+    axis.title.y = element_blank(), 
+    legend.position = "none" 
+  )+
+   labs(title="The West experienced higher GDP per capita growth over the last 20 years",
+       subtitle = "GDP per capita development over time by region", 
+       x="Regions",
+       y="Annual GDP per capita growth rate (1997-2020)", 
+       caption= "Source: Bureau of Economic Analysis GDP Data 1997-2020")+ 
+  
+  #add arrow to graph
+   geom_curve(
+    data = data.frame(x = 6, y = 0.03, xend = 3.7, yend = 0.038),
+    mapping = aes(x = x, y = y, xend = xend, yend = yend),
+    colour = "grey15",
+    size = 0.5,
+    curvature = 0.25,
+    arrow = arrow(length = unit(2, "mm"), type = "closed"),
+    inherit.aes = FALSE ) + 
+  
+    # add the text label on the graph
+  geom_text(
+    data = data.frame(x = 6, y = 0.028, label = label),
+    aes(x = x, y = y, label = label),
+    colour="grey15",
+    family="PT Sans",
+    hjust = 0.5,
+    lineheight = .8,
+    inherit.aes = FALSE)
+```
 
 ```{r, GDP Maps, message=FALSE}
 #GDP MAP OF US (total GDP --> economy size)
