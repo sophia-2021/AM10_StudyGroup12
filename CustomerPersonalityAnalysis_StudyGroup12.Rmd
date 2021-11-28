@@ -317,7 +317,7 @@ eco_ind_us
     
   # add the text label on the graph
   geom_text(
-    data = data.frame(x = 2008.75, y = 58000, label = "Financial Crisis"),
+    data = data.frame(x = 2008.75, y = 59000, label = "Financial Crisis"),
     aes(x = x, y = y, label = label),
     colour="grey15",
     family="PT Sans",
@@ -326,7 +326,7 @@ eco_ind_us
     inherit.aes = FALSE) +
     
      geom_text(
-    data = data.frame(x = 2020.2, y = 58000, label = "Covid-19"),
+    data = data.frame(x = 2020.2, y = 59000, label = "Covid-19"),
     aes(x = x, y = y, label = label),
     colour="grey15",
     family="PT Sans",
