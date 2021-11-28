@@ -106,23 +106,7 @@ km.res <- kmeans(dfc,2, nstart = 10)
 fviz_cluster(km.res, dfc, geom = "point",ellipse.type = "norm",repel = TRUE, ggtheme = theme_minimal(), xlab="", ylab="")+
   ggtitle(label="Customer segments")+
   scale_color_manual(values=c("tomato", "cornflowerblue"))
-  
 
-```
-
-```{r}
-#centroids
-df1<-df1 %>% 
-  select(-education, -marital_status)
-
-
-user <- data.frame(scale(df1))
-
-
-#train kmeans clustering
-model_kmeans_2clusters <- eclust(user, "kmeans", k = 2, nstart=50, graph=FALSE)
-#df with cluster centers and cluster numbers 
-cluster_centers <- data.frame(cluster=as.factor(c(1:2)),model_kmeans_2clusters$centers)
 
 #transpose
 cluster_centers_t <- cluster_centers %>% gather(variable, value, -cluster, factor_key=TRUE)
