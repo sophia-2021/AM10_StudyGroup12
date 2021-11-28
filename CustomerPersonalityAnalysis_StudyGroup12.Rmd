@@ -460,3 +460,15 @@ us_gdp_map_pc
 
 ```
 
+```{r, read the consumer personality analysis data}
+library("readr")
+profiles_cleaned <- read_csv(here::here("profiles_cleaned.csv"))
+```
+
+```{r, correlation between variables}
+profiles_cleaned %>% 
+  mutate(age = 2021-year_birth) %>% 
+  select(age, income, kidhome, mnt_wines, mnt_fish_products, mnt_meat_products) %>% 
+  ggcorr(label_round=2,label=TRUE,hjust=0.75 )
+```
+
