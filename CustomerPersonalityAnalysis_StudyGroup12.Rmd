@@ -7,7 +7,11 @@ output: html_document
 
 # Introduction
 
+ADD PARAGRAPH HERE 
+
 # Background
+
+ADD PARAGRAPH AND ALL DATA SOURCES HERE 
 
 ```{r setup, include=FALSE, warning=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -61,6 +65,8 @@ skim(profile_clean)
 ```
 
 #Clusters
+
+PLS SEE AT BOTTOM AGAIN
 
 
 ```{r}
@@ -142,12 +148,8 @@ graphkmeans_2clusters
   
   
 
-# Cluster analysis 
-# Campaign effectiveness evaluation
-
-
 # Create own graph template
-```{r create own graphing template, message=FALSE, warning=FALSE, error=FALSE}
+```{r create own graphing template, message=FALSE, warning=FALSE, error=FALSE, include=FALSE}
 
 loadfonts(device="pdf")
 
@@ -551,6 +553,60 @@ us_gdp_map_pc
 
 ```
 
+# Wine Consumption Analysis 
+
+We also want to understand if wine is a good business to go into. Hence we first look at the wine consumption development over the years. We find that wine consumption has grown significantly over the last 15 years in the US. 
+
+```{r, wine consumption growth,  message=FALSE, fig.width=6, fig.height=6}
+library("readxl")
+
+#Source: https://www.statista.com/statistics/233722/total-wine-consumption-of-the-us-by-wine-type/
+#Wine Consumption in the U.S. by Wine Institute
+
+wine_total_us <- read_excel( here::here("data","totalwineconsumption.xlsx"), sheet=2)
+
+#Clean data and rename columns 
+wine_total_us_clean <- wine_total_us[-1,]
+wine_total_us_clean <- wine_total_us_clean[-1,] %>%  rename(year="Total wine consumption of the U.S. 2005-2020", consumption="...2") %>% mutate(consumption=as.numeric(consumption))
+
+#Calculate consumption growth from first to last year
+pct_growth= round((as.numeric(wine_total_us_clean[16,2])-as.numeric(wine_total_us_clean[1,2]))/as.numeric(wine_total_us_clean[1,2])*100,2)
+pct_growth 
+
+#Create label for annotation
+label <-paste("Total consumption grew by",as.character(pct_growth),"% \n over the last 15 years", by=" ")
+
+
+wine_total_us_clean %>%  ggplot(aes(x=year, y=consumption)) + 
+  geom_col(fill="#5C0303") + 
+  custom_layout + 
+  ylim(0, 1200)+
+  labs(title="Wine consumption expereinced high growth over the last 15 years",
+       subtitle = "Total wine consumption in million gallons (2005-2020)", 
+       caption="Source: Wine Institute - Wine consumption survery", 
+       y="Consumption in million gallons") +
+  
+   #add arrow to graph
+   geom_curve(
+    data = data.frame(x = 1, y = 750, xend = 15, yend = 1050),
+    mapping = aes(x = x, y = y, xend = xend, yend = yend),
+    colour = "grey15",
+    size = 0.5,
+    curvature = -0.25,
+    arrow = arrow(length = unit(2, "mm"), type = "closed"),
+    inherit.aes = FALSE )  +
+
+ # add the text label on the graph
+  geom_text(
+    data = data.frame(x = 6, y = 1100, label = label),
+    aes(x = x, y = y, label = label),
+    colour="grey15",
+    family="PT Sans",
+    hjust = 0.5,
+    lineheight = .8,
+    inherit.aes = FALSE)
+
+```
 
 # Retailer Data Analyis
 
