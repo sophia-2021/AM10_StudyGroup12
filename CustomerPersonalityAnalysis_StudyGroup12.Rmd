@@ -43,7 +43,7 @@ library(gghighlight)
 library(skimr)
 ```
 
-```{r cleaning data, include=FALSE}
+```{r cleaning data customer data}
 #cleanign data
 marketing_campaign <- read_delim("marketing_campaign.csv", 
     "\t", escape_double = FALSE, trim_ws = TRUE)
@@ -60,7 +60,7 @@ profile_clean <- marketing_campaign %>%
   drop_na(income) %>% 
   filter(year_birth > 1925)
 
-skim(profile_clean)
+skimr::skim(profile_clean)
 
 ```
 
@@ -149,24 +149,24 @@ graphkmeans_2clusters
   
 
 # Create own graph template
-```{r create own graphing template, message=FALSE, warning=FALSE, error=FALSE, include=FALSE}
+```{r create own graphing template, message=FALSE, warning=FALSE, error=FALSE}
 
 loadfonts(device="pdf")
 
 custom_layout <-   theme_minimal() + theme(
      
     text=element_text(family = "PT Sans"),
-    plot.title = element_text(face="bold", size = rel(1.5)), 
-    plot.subtitle= element_text(color="grey60", size = rel(1.4)),
+    plot.title = element_text(face="bold", size = rel(1.7)), 
+    plot.subtitle= element_text(color="grey60", size = rel(1.6)),
     panel.background = element_blank(),
-    plot.caption = element_text(hjust = 0, size = rel(1), face="italic", color="grey60"), 
+    plot.caption = element_text(hjust = 0, size = rel(1.2), face="italic", color="grey60"), 
     plot.title.position = "plot", 
     plot.caption.position =  "plot", 
-    axis.title = element_text(color="grey50", size = rel(1.2)), 
-    axis.ticks= element_line(color="grey50", size = rel(1.2)), 
+    axis.title = element_text(color="grey50", size = rel(1.4)), 
+    axis.ticks= element_line(color="grey50", size = rel(1.4)), 
     axis.line = element_line(size = 1, colour = "grey80"), 
-    axis.text =element_text(color="grey50", size = rel(0.8)),
-    legend.title = element_text(family = "PT Sans",face = "bold", rel(1.2)))
+    axis.text =element_text(color="grey50", size = rel(1)),
+    legend.title = element_text(family = "PT Sans",face = "bold", rel(1.4)))
 
 ```
 
@@ -179,7 +179,7 @@ SOPHIA'S PART --> WILL CLEAN UP AND COMMENT MORE
 
 Before we can start with the analysis, we load and clean the data. 
 
-```{r, load_data Economic Indicator, include = FALSE, message=FALSE}
+```{r, load_data Economic Indicator, message=FALSE}
 # Data Source: https://apps.bea.gov/regional/downloadzip.cfm
 gdp <- read_csv(here::here("data", "SAGDP1__ALL_AREAS_1997_2020.csv"))
 pce <- read_csv(here::here("data", "SAPCE4__ALL_AREAS_1997_2020.csv"))
@@ -207,7 +207,7 @@ far_west <- c("Alaska", "California", "Hawaii", "Nevada", "Oregon", "Washington"
 
 ```
 
-```{r, load_cleaning, include = FALSE, message=FALSE}
+```{r, load_cleaning, message=FALSE}
 gdp_clean <- gdp %>% 
   
   #Clean names
@@ -240,7 +240,7 @@ gdp_states_sf <- st_as_sf(gdp_states_2020,
 
 
 gdp_states_2020_temp <- gdp_states_2020 %>%  select(geo_name, GDP) 
-glimpse(gdp_states_sf)
+#glimpse(gdp_states_sf)
 
 #Create dataframe with GDP per capita 
 gdp_perCapita_states_2020 <- gdp_states_2020 %>% left_join(state_pop, by=c("geo_name"="STATE")) %>% 
@@ -270,7 +270,7 @@ gdp_pc_regions <- gdp_regions %>%
   
 ```
 
-```{r, clean pce, message=FALSE, warning=FALSE, error=FALSE, fig.width=8, fig.hight=8}
+```{r, clean pce, message=FALSE, warning=FALSE, error=FALSE, fig.width=12, fig.hight=14}
 
 #glimpse(pce)
 pce_clean <- pce %>%
@@ -299,7 +299,7 @@ pce_pc_short <- pce_total_annual %>% select(year, exp_percapita)
 ## GDP and PCE over time 
 
 First, we want to get a feeling of who GDP and PCE (Personal Consumption Expenditure) is developing over time in the US to get a better feeling of the economic situation in the US. 
-```{r, GDP US Graphs, message=FALSE, fig.width=8, fig.hight=6}
+```{r, GDP US Graphs, message=FALSE, fig.width=14, fig.height=8}
 
 #Join GDP, PCE data 
 eco_ind_us <- gdp_regions %>% 
@@ -308,7 +308,7 @@ eco_ind_us <- gdp_regions %>%
   #left_join(Inc_pc_us_short, by="year") %>%
   left_join(pce_pc_short, by="year") %>% 
   pivot_longer(cols=2:3, names_to="indicator", values_to="value")
-eco_ind_us 
+
 
 
 #Plot graphs with both indicators 
@@ -367,7 +367,7 @@ eco_ind_us
 To evaluate if wine is a good industry to go into, we use the PCE data to get a first hypothesis. We calculate the propotion of alcohol spending of total consumer spending over time to get a first indication for this. 
 
 
-```{r, Alchol beverage , message=FALSE, fig.width=8, fig.hight=6}  
+```{r, Alchol beverage , message=FALSE, fig.width=12, fig.height=8}  
 
 #PROPORTIONAL GROWTH OF ALCHOLIC BEVERAGES FROM TOTAL EXPENDITURE 
 pce_alc <- pce_clean %>%  filter(description %in% c("Personal consumption expenditures","Alcoholic beverages purchased for off-premises consumption")) %>% 
@@ -433,7 +433,7 @@ pce_alc %>%  filter(geo_name=="United States") %>%
 
 Do go a little deeper, we want to analyze GDP growth on region. It becomes visible that different regions have not only different GDP and different GDP per capita but also the average of annual growth over the last 20 years significantly differs, which should be taken into consideration when deciding where to enter the market. 
 
-```{r, GDP Graphs, message=FALSE, fig.width=6, fig.hight=6}
+```{r, GDP Graphs, message=FALSE, fig.width=10, fig.height=8}
 # GDP over time by region 
 gdp_regions %>%  filter(geo_name != "United States") %>% 
   ggplot(aes(x=year, y=GDP, group=geo_name)) + 
@@ -516,7 +516,7 @@ gdp_pc_regions_growth %>%  ggplot(aes(x=fct_reorder(geo_name, desc(average_annua
 
 Next we plot GDP and GDP per capita on a US map based on states. With this, differences between states become easily visible. Moreover, it is intresting to see how missleading GDP can be as an indication for average wealth when the population size is not considered, given that the two maps look very different from each other. 
 
-```{r, GDP Maps, message=FALSE,  fig.width=6, fig.hight=6}
+```{r, GDP Maps, message=FALSE,  fig.width=10, fig.hight=10}
 
 #GDP MAP OF US (total GDP --> economy size)
 states <- read_sf(here::here("data", "cb_2018_us_state_500k.shp")) %>% 
@@ -554,12 +554,13 @@ us_gdp_map_pc
 
 ```
 
+
 # Wine Consumption Analysis 
 
 ## Wine consumption growth 
 We also want to understand if wine is a good business to go into. Hence we first look at the wine consumption development over the years. We find that wine consumption has grown significantly over the last 15 years in the US. 
 
-```{r, wine consumption growth,  message=FALSE, error=FALSE, warning=FALSE, fig.width=6, fig.height=6}
+```{r, wine consumption growth,  message=FALSE, error=FALSE, warning=FALSE, fig.width=12, fig.height=8}
 library("readxl")
 
 #Source: https://www.statista.com/statistics/233722/total-wine-consumption-of-the-us-by-wine-type/
@@ -582,7 +583,7 @@ label <-paste("Total consumption grew by",as.character(pct_growth),"% \n over th
 wine_total_us_clean %>%  ggplot(aes(x=year, y=consumption)) + 
   geom_col(fill="#5C0303") + 
   custom_layout + 
-  ylim(0, 1200)+
+  ylim(0, 1250)+
   labs(title="Wine consumption expereinced high growth over the last 15 years",
        subtitle = "Total wine consumption in million gallons (2005-2020)", 
        caption="Source: Wine Institute - Wine consumption survery", 
@@ -600,7 +601,7 @@ wine_total_us_clean %>%  ggplot(aes(x=year, y=consumption)) +
 
  # add the text label on the graph
   geom_text(
-    data = data.frame(x = 6, y = 1100, label = label),
+    data = data.frame(x = 6, y = 1200, label = label),
     aes(x = x, y = y, label = label),
     colour="grey15",
     family="PT Sans",
@@ -609,11 +610,13 @@ wine_total_us_clean %>%  ggplot(aes(x=year, y=consumption)) +
     inherit.aes = FALSE)
 
 ```
+
+
 ## Wine consumption by state 
 
 Similarly to the GDP analysis, we also want to understand the geographical distribution of wine consumption better. While California has the highest total consumption of wine, the New England region actually has the highest per capita consumption of wine. 
 
-```{r, wine consumption by state, message=FALSE, warning=FALSE, error=FALSE, fig.width=6, fig.height=6}
+```{r, wine consumption by state, message=FALSE, warning=FALSE, error=FALSE, fig.width=10, fig.height=10}
 library("readxl")
 
 #Source: https://www.statista.com/statistics/942245/wine-consumption-in-the-us-by-state/
@@ -695,7 +698,7 @@ skim(profile_clean)
 
 We take a look at the entrie food basket of the customers of the retailer. We observe that wine actually has the highest proportion of spending, hence we can infer that the retailer is not a regular grocery chain but more likely a specilaized vendor known for its wine.
 
-```{r customer food basket, warning=FALSE, fig.width=6, fig.height=4}
+```{r customer food basket, warning=FALSE, fig.width=12, fig.height=6}
 
 #COLOR WINE BOXPLOT
 my_colours <- c("grey70", "#5C0303")
@@ -735,8 +738,8 @@ customer_food_basked %>%
 
 We know now that the customers of the retailer do appear to purchase a lot on wine, hence we want to use the data to gain more insights on what characteristics the high wine spenders have, which we could then ultimately use to target our customers. From the graphs below we can see that especially income and age appear to impact the median spending on wine consumption. This already gives us a first indication of what target customers we could focus on. 
 
-```{r, rconsumer personality analysis data 2, fig.width=6, fig.height=6}
-#TO DOES::
+```{r, rconsumer personality analysis data 2, fig.width=8, fig.height=6}
+#TO DOS::
 #ANNOTATION !!!
 
 #We will use median as the wine spending data appears to be highly skewed right
@@ -879,7 +882,7 @@ profile_clean %>% group_by(Age) %>%
 
 We observed that age appears to be an influencing factor for wine expenditure. However, we have not explored this variable before. To get a better understanding of the US in terms of median age, we look again at the map of the US by median age. It becomes apparent that the North Eastern region of the US appears to have a higher median age. 
 
-```{r, median age by state, message=FALSE,warning=FALSE, error=FALSE, fig.width=6, fig.height=6}
+```{r, median age by state, message=FALSE,warning=FALSE, error=FALSE, fig.width=10, fig.height=10}
 library("readxl")
 
 #Source: https://www.statista.com/statistics/208048/median-age-of-population-in-the-usa-by-state/
@@ -935,7 +938,7 @@ QUESTION: IS THIS JUST WINE CONSUMERS? --> need to identify high spent/high prof
 IS THERE ALSO A WAY TO ONLY INCLUDE SOME OF THE VARIABLES FOR CLUSTREING (AGE; EDUCATION; MARITAL STAUTS; INCOME; CHILDRES) --> only to ones we use in customer analysis  --> happy to talk about this 
 
 
-```{r cleaning data }
+```{r cleaning data customer analysis 1}
 #combining some columns into 1 
 df1=na.omit(profile_clean)
 df1['Age']= 2021-df1$year_birth
