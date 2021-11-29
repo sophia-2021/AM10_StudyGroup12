@@ -555,9 +555,10 @@ us_gdp_map_pc
 
 # Wine Consumption Analysis 
 
+## Wine consumption growth 
 We also want to understand if wine is a good business to go into. Hence we first look at the wine consumption development over the years. We find that wine consumption has grown significantly over the last 15 years in the US. 
 
-```{r, wine consumption growth,  message=FALSE, fig.width=6, fig.height=6}
+```{r, wine consumption growth,  message=FALSE, error=FALSE, warning=FALSE, fig.width=6, fig.height=6}
 library("readxl")
 
 #Source: https://www.statista.com/statistics/233722/total-wine-consumption-of-the-us-by-wine-type/
@@ -571,7 +572,7 @@ wine_total_us_clean <- wine_total_us_clean[-1,] %>%  rename(year="Total wine con
 
 #Calculate consumption growth from first to last year
 pct_growth= round((as.numeric(wine_total_us_clean[16,2])-as.numeric(wine_total_us_clean[1,2]))/as.numeric(wine_total_us_clean[1,2])*100,2)
-pct_growth 
+
 
 #Create label for annotation
 label <-paste("Total consumption grew by",as.character(pct_growth),"% \n over the last 15 years", by=" ")
@@ -607,6 +608,62 @@ wine_total_us_clean %>%  ggplot(aes(x=year, y=consumption)) +
     inherit.aes = FALSE)
 
 ```
+## Wine consumption by state 
+
+Similarly to the GDP analysis, we also want to understand the geographical distribution of wine consumption better. While California has the highest total consumption of wine, the New England region actually has the highest per capita consumption of wine. 
+
+```{r, wine consumption by state, message=FALSE, warning=FALSE, error=FALSE, fig.width=6, fig.height=6}
+library("readxl")
+
+#Source: https://www.statista.com/statistics/942245/wine-consumption-in-the-us-by-state/
+#National Institute on Alcohol Abuse and Alcoholism 
+
+wine_by_state <- read_excel( here::here("data","wineconsumptionbystate.xlsx"), sheet=2)
+
+#Clean data and rename columns 
+wine_by_state_clean <- wine_by_state [-1,]
+wine_by_state_clean <- wine_by_state_clean[-1,] %>%  rename(state="Wine consumption in the U.S. by state 2019", consumption="...2") %>% mutate(consumption=as.numeric(consumption))
+
+wine_by_state_pop <- wine_by_state_clean %>%  left_join(state_pop, by=c("state"= "STATE")) %>%
+  
+#Consumption data reported in 1,000 of gallons 
+#Caclulate per capita consumption 
+  mutate(consumption_percapita= consumption/POPESTIMATE2019*1000)
+
+
+wine_by_state_total_consumption <- wine_by_state_pop %>%  select(state, consumption)
+wine_by_state_percapita_consumption <- wine_by_state_pop %>%  select(state, consumption_percapita)
+
+states_wine_consumption <- states %>%  left_join(wine_by_state_total_consumption, by=c("NAME" = "state"))
+
+states_wine_consumption_pc <- states %>%  left_join(wine_by_state_percapita_consumption, by=c("NAME" = "state"))
+
+#Total wine consumption
+us_wine_map <- ggplot() + 
+  geom_sf(data=states_wine_consumption, aes(fill= consumption)) + 
+  custom_layout + 
+  scale_fill_gradient(low = "#FFDDDD", high = "#5C0303") +
+  coord_sf(datum = NA)+
+   labs(title="California has the highest total wine consumption",
+       subtitle = "Wine consumption in 1,000 gallons", 
+       caption="Source: National Institute on Alcohol Abuse and Alcoholism 2019", 
+       fill="Total wine consumption")
+us_wine_map
+
+#Wine consumption per capita 
+us_wine_map_pc <- ggplot() + 
+  geom_sf(data=states_wine_consumption_pc, aes(fill= consumption_percapita)) + 
+  custom_layout + 
+  scale_fill_gradient(low = "#FFDDDD", high = "#5C0303") +
+  coord_sf(datum = NA)+
+   labs(title="New England states have the highest per capita wine consumption",
+       subtitle = "Wine consumption per capita in gallons", 
+       caption="Source: National Institute on Alcohol Abuse and Alcoholism 2019", 
+       fill="Wine consumption per capita")
+us_wine_map_pc
+
+```
+
 
 # Retailer Data Analyis
 
