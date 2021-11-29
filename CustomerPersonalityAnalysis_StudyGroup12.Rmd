@@ -270,7 +270,7 @@ gdp_pc_regions <- gdp_regions %>%
   
 ```
 
-```{r, clean pce, message=FALSE, fig.width=8, fig.hight=8}
+```{r, clean pce, message=FALSE, warning=FALSE, error=FALSE, fig.width=8, fig.hight=8}
 
 #glimpse(pce)
 pce_clean <- pce %>%
@@ -295,10 +295,11 @@ pce_total_annual <- pce_clean %>%
 pce_pc_short <- pce_total_annual %>% select(year, exp_percapita)
 
 ```
+
 ## GDP and PCE over time 
 
 First, we want to get a feeling of who GDP and PCE (Personal Consumption Expenditure) is developing over time in the US to get a better feeling of the economic situation in the US. 
-```{r, GDP US Graphs, message=FALSE, fig.width=6, fig.hight=6}
+```{r, GDP US Graphs, message=FALSE, fig.width=8, fig.hight=6}
 
 #Join GDP, PCE data 
 eco_ind_us <- gdp_regions %>% 
@@ -366,7 +367,7 @@ eco_ind_us
 To evaluate if wine is a good industry to go into, we use the PCE data to get a first hypothesis. We calculate the propotion of alcohol spending of total consumer spending over time to get a first indication for this. 
 
 
-```{r, Alchol beverage , message=FALSE, fig.width=6, fig.hight=6}  
+```{r, Alchol beverage , message=FALSE, fig.width=8, fig.hight=6}  
 
 #PROPORTIONAL GROWTH OF ALCHOLIC BEVERAGES FROM TOTAL EXPENDITURE 
 pce_alc <- pce_clean %>%  filter(description %in% c("Personal consumption expenditures","Alcoholic beverages purchased for off-premises consumption")) %>% 
@@ -589,7 +590,7 @@ wine_total_us_clean %>%  ggplot(aes(x=year, y=consumption)) +
   
    #add arrow to graph
    geom_curve(
-    data = data.frame(x = 1, y = 750, xend = 15, yend = 1050),
+    data = data.frame(x = 1, y = 750, xend = 16, yend = 1050),
     mapping = aes(x = x, y = y, xend = xend, yend = yend),
     colour = "grey15",
     size = 0.5,
@@ -694,7 +695,7 @@ skim(profile_clean)
 
 We take a look at the entrie food basket of the customers of the retailer. We observe that wine actually has the highest proportion of spending, hence we can infer that the retailer is not a regular grocery chain but more likely a specilaized vendor known for its wine.
 
-```{r customer food basket, include=FALSE, fig.width=6, fig.height=4}
+```{r customer food basket, warning=FALSE, fig.width=6, fig.height=4}
 
 #COLOR WINE BOXPLOT
 my_colours <- c("grey70", "#5C0303")
@@ -732,11 +733,11 @@ customer_food_basked %>%
 
 ## Wine customer analysis 
 
-We know now that the customers of the retailer do appear to purchase a lot on wine, hence we want to use the data to gain more insights on what characteristics the high wine spenders have, which we could then ultimately use to target our customers. From the graphs below we can see that especially income and age appear to impact the median spending on wine consumption. This already gives us a first indication of what target custoemrs we could focus on. 
+We know now that the customers of the retailer do appear to purchase a lot on wine, hence we want to use the data to gain more insights on what characteristics the high wine spenders have, which we could then ultimately use to target our customers. From the graphs below we can see that especially income and age appear to impact the median spending on wine consumption. This already gives us a first indication of what target customers we could focus on. 
 
 ```{r, rconsumer personality analysis data 2, fig.width=6, fig.height=6}
 #TO DOES::
-#ANNOTATION
+#ANNOTATION !!!
 
 my_colours <- c("grey70", "#5C0303")
 
@@ -876,6 +877,7 @@ profile_clean %>% group_by(Age) %>%
 ```
 
 
+## Correlation Analysis 
 
 ```{r, read the consumer personality analysis data}
 library("readr")
@@ -888,6 +890,7 @@ profiles_cleaned %>%
   select(age, income, kidhome, mnt_wines, mnt_fish_products, mnt_meat_products) %>% 
   ggcorr(label_round=2,label=TRUE,hjust=0.75 )
 ```
+
 # Customer cluster analysis 
 
 QUESTION: IS THIS JUST WINE CONSUMERS? --> need to identify high spent/high profit customers 
