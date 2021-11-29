@@ -578,10 +578,13 @@ skim(profile_clean)
 ```
 
 ## Food basket analysis 
+
+We take a look at the entrie food basket of the customers of the retailer. We observe that wine actually has the highest proportion of spending, hence we can infer that the retailer is not a regular grocery chain but more likely a specilaized vendor known for its wine.
+
 ```{r customer food basket, include=FALSE, fig.width=6, fig.height=4}
-#ORDER BOXPLOT FROM HIGHEST TO LOWEST
+
 #COLOR WINE BOXPLOT
-#CHANGE X AXIS LABELS 
+my_colours <- c("grey70", "#5C0303")
 
 # Calculate total food basket and proportions of every category 
 customer_food_basked <- profile_clean %>%  select(id,mnt_wines,mnt_fruits,mnt_meat_products,mnt_fish_products, mnt_sweet_products) %>% 
@@ -593,10 +596,19 @@ customer_food_basked <- profile_clean %>%  select(id,mnt_wines,mnt_fruits,mnt_me
          sweet_prop=mnt_sweet_products/food_basket)
 
 #Plot proportion distribution 
-customer_food_basked %>%select(id, wine_prop, fruit_prop, meat_prop, fish_prop, sweet_prop) %>%  
-  pivot_longer(cols=2:6, names_to="type", values_to="proportion") %>%  ggplot(aes(y=proportion, x=type, group=type)) + 
+customer_food_basked %>%
+  select(id, wine_prop, fruit_prop, meat_prop, fish_prop, sweet_prop) %>%  
+  pivot_longer(cols=2:6, names_to="type", values_to="proportion") %>%  
+  mutate(type = fct_reorder(type, proportion, .fun='median')) %>% 
+  mutate(wine=ifelse(type == "wine_prop", TRUE, FALSE)) %>% 
+  ggplot(aes(x=reorder(type, desc(proportion)), y=proportion, group=type, color=wine)) +
   geom_boxplot() + 
+  scale_x_discrete(labels= c("Wine", "Meat", "Fish", "Sweets", "Fruits")) +
   custom_layout + 
+  scale_color_manual(values = my_colours)+
+  theme(
+    axis.title.y = element_blank(), 
+    legend.position = "none" ) + 
   labs(title="Wine has highest proportion indicating that retailer is a delicatessen or specialized vendor",
        subtitle = "Proportion of food basket by food category", 
        caption="Source: Customer Personality Analysis Data Set", 
@@ -604,29 +616,37 @@ customer_food_basked %>%select(id, wine_prop, fruit_prop, meat_prop, fish_prop, 
        y= "Proportion of food basket")
 
 ```
+
 ## Wine customer analysis 
 
 We know know that the customers of the retailer do appear to purchase a lot ot wine, hence we want to use the data to gain more insights on what characteristics the high wine spenders have, which we could then ultimately use to target our customers. 
 
 ```{r, rconsumer personality analysis data 2, fig.width=6, fig.height=6}
-
+#TO DOES::
 #CHANGE ORDER 
-#COLOR WIDOW AND DICORED 
+#COLOR 
 #ANNOTATION
+#TITLE
 
 #MARITAL STATUS
 #We will use median as the data appears to be highly skewed 
-profile_clean %>% group_by(marital_status) %>%  summarise(median=median(mnt_wines), count=n()) %>%  filter(marital_status %in% c("Divorced", "Married", "Single","Together", "Widow")) %>% ggplot(aes(x=marital_status, y=median)) + 
+profile_clean %>% group_by(marital_status) %>%  
+  summarise(median=median(mnt_wines), count=n()) %>%  
+  filter(marital_status %in% c("Divorced", "Married", "Single","Together", "Widow")) %>% 
+  ggplot(aes(x=fct_reorder(marital_status, desc(median)), y=median)) + 
   geom_col() + 
   custom_layout +
-  labs(title="XXXXXXXX",
+  labs(title="Widowed people appear to spend much more on wine",
        subtitle = "Median wine spending by marital stuatus", 
        caption="Source: Customer Personality Analysis Data Set", 
        x= "Marital status", 
        y= "Median wine spending")
 
 #EDUCATION
-profile_clean %>% group_by(education) %>%  summarise(median=median(mnt_wines), count=n()) %>%  filter(education %in% c("2n Cycle", "Graduation", "Master","PhD")) %>% ggplot(aes(x=education, y=median)) + 
+profile_clean %>% group_by(education) %>%  
+  summarise(median=median(mnt_wines), count=n()) %>% 
+  filter(education %in% c("2n Cycle", "Graduation", "Master","PhD")) %>% 
+  ggplot(aes(x=education, y=median)) + 
   geom_col() + 
   custom_layout +
   labs(title="XXXXXXXX",
@@ -636,17 +656,21 @@ profile_clean %>% group_by(education) %>%  summarise(median=median(mnt_wines), c
        y= "Median wine spending") 
 
 #BY CHILDREN AT HOME 
-profile_clean %>% group_by(kidhome) %>%  summarise(median=median(mnt_wines), count=n()) %>%   ggplot(aes(x=as.factor(kidhome), y=median)) + 
+profile_clean %>% group_by(kidhome) %>%  
+  summarise(median=median(mnt_wines), count=n()) %>%  
+  ggplot(aes(x=as.factor(kidhome), y=median)) + 
   geom_col() + 
   custom_layout +
   labs(title="XXXXXXXX",
-       subtitle = "Median wine spending by number of children", 
+       subtitle = "Median wine spending by number of kids", 
        caption="Source: Customer Personality Analysis Data Set", 
-       x= "Number of children at home", 
+       x= "Number of kids at home", 
        y= "Median wine spending") 
 
 #BY TEEN AT HOME 
-profile_clean %>% group_by(teenhome) %>%  summarise(median=median(mnt_wines), count=n()) %>%   ggplot(aes(x=as.factor(teenhome), y=median)) + 
+profile_clean %>% group_by(teenhome) %>%  
+  summarise(median=median(mnt_wines), count=n()) %>%  
+  ggplot(aes(x=as.factor(teenhome), y=median)) + 
   geom_col() + 
   custom_layout +
   labs(title="XXXXXXXX",
@@ -661,7 +685,9 @@ profile_clean['Child']=profile_clean$kidhome+profile_clean$teenhome
 
 
 #BY CHILDREN AT HOME (KIDS+TEENAGERS)
-profile_clean %>% group_by(Child) %>%  summarise(median=median(mnt_wines), count=n()) %>%   ggplot(aes(x=as.factor(Child), y=median)) + 
+profile_clean %>% group_by(Child) %>%  
+  summarise(median=median(mnt_wines), count=n()) %>%  
+  ggplot(aes(x=as.factor(Child), y=median)) + 
   geom_col() + 
   custom_layout +
   labs(title="XXXXXXXX",
@@ -671,17 +697,49 @@ profile_clean %>% group_by(Child) %>%  summarise(median=median(mnt_wines), count
        y= "Median wine spending") 
 
 #BY AGE (only look at 30-70 because other categories are too small (not enough data))
-profile_clean %>% group_by(Age) %>%  summarise(median=median(mnt_wines), count=n()) %>%   ggplot(aes(x=as.factor(Age), y=median)) + 
+profile_clean %>% group_by(Age) %>%  
+  filter(Age>=30, Age <70) %>%
+  mutate(age_group= case_when(
+    Age %in% c(30,31,32,33,34) ~ "30-34", 
+    Age %in% c(35,36,37,38,39) ~ "35-39",
+    Age %in% c(40,41,42,43,44) ~ "40-44",
+    Age %in% c(45,46,47,48,49) ~ "45-49",
+    Age %in% c(50,51,52,53,54) ~ "50-54",
+    Age %in% c(55,56,57,58,59) ~ "55-59",
+    Age %in% c(60,61,62,63,64) ~ "60-64",
+    Age %in% c(65,66,67,68,69) ~ "65-69",
+  )) %>%  
+  group_by(age_group) %>% 
+  summarise(median=median(mnt_wines), count=n()) %>%  
+  ggplot(aes(x=age_group, y=median)) + 
   geom_col() + 
   custom_layout +
-  labs(title="XXXXXXXX",
-       subtitle = "Median wine spending by age", 
+  labs(title="With age the wine expenditure appears to increase",
+       subtitle = "Median wine spending by age group", 
        caption="Source: Customer Personality Analysis Data Set", 
-       x= "Age", 
+       x= "Age group", 
        y= "Median wine spending") 
 
-## ADD MEDIAN WINE SPENDING BY AGE 
-## ADD MEDIAN WINE SPENDING BY INCOME 
+## MEDIAN WINE SPENDING BY INCOME 
+#CHANGE ORDER OF BARS 
+profile_clean %>% group_by(income) %>%  
+  #filter(Age>=30, Age <70) %>%
+  mutate(income_group= case_when(
+    income <= 30000 ~ "<30k",
+    income <= 50000 ~ "30-50k",
+    income <= 70000 ~ "50-70k", 
+    income <= 90000 ~ "70-90k", 
+    income > 90000 ~ ">90k")) %>%  
+  group_by(income_group) %>% 
+  summarise(median=median(mnt_wines), count=n()) %>%  
+  ggplot(aes(x=income_group, y=median)) + 
+  geom_col() + 
+  custom_layout +
+  labs(title="High income groups tend to spend more on wine consumption",
+       subtitle = "Median wine spending by income group", 
+       caption="Source: Customer Personality Analysis Data Set", 
+       x= "Income group", 
+       y= "Median wine spending") 
 
 ```
 
