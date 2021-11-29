@@ -184,7 +184,7 @@ Before we can start with the analysis, we load and clean the data.
 gdp <- read_csv(here::here("data", "SAGDP1__ALL_AREAS_1997_2020.csv"))
 pce <- read_csv(here::here("data", "SAPCE4__ALL_AREAS_1997_2020.csv"))
 
-# PUT LINKS HERE
+
 states <- read_csv(here::here("data", "states.csv"))
 state_pop <- read_csv(here::here("data", "2019_Census_US_Population_Data_By_State_Lat_Long.csv"))
 
