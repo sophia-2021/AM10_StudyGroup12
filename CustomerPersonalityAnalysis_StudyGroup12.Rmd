@@ -739,10 +739,11 @@ We know now that the customers of the retailer do appear to purchase a lot on wi
 #TO DOES::
 #ANNOTATION !!!
 
+#We will use median as the wine spending data appears to be highly skewed right
+
 my_colours <- c("grey70", "#5C0303")
 
 #MARITAL STATUS
-#We will use median as the data appears to be highly skewed 
 profile_clean %>% group_by(marital_status) %>%  
   summarise(median=median(mnt_wines), count=n()) %>%  
   filter(marital_status %in% c("Divorced", "Married", "Single","Together", "Widow")) %>% 
@@ -876,6 +877,43 @@ profile_clean %>% group_by(Age) %>%
 
 ```
 
+We observed that age appears to be an influencing factor for wine expenditure. However, we have not explored this variable before. To get a better understanding of the US in terms of median age, we look again at the map of the US by median age. It becomes apparent that the North Eastern region of the US appears to have a higher median age. 
+
+```{r, median age by state, message=FALSE,warning=FALSE, error=FALSE, fig.width=6, fig.height=6}
+library("readxl")
+
+#Source: https://www.statista.com/statistics/208048/median-age-of-population-in-the-usa-by-state/
+#US Census Bureau 2019
+
+median_age <- read_excel( here::here("data","medianageus.xlsx"), sheet=2)
+
+#Clean data and rename columns 
+median_age_clean <- median_age[-1,]
+median_age_clean <- median_age_clean[-1,] %>% rename(state="Median age of U.S. population in  by state 2019", median_age="...2") %>% mutate(median_age=as.numeric(median_age))
+
+
+median_age_pop <- median_age_clean  %>%  left_join(state_pop, by=c("state"= "STATE")) %>% 
+  filter(state!="United States", state!="Puerto Rico")
+  
+
+median_age_pop_temp <- median_age_pop %>%  select(state, median_age)
+
+states_median_age <- states %>%  left_join(median_age_pop_temp, by=c("NAME" = "state"))
+
+
+#Median age by state
+us_age_map <- ggplot() + 
+  geom_sf(data=states_median_age, aes(fill= median_age)) + 
+  custom_layout + 
+  scale_fill_gradient(low = "#DEFFDA", high = "#064500") +
+  coord_sf(datum = NA)+
+   labs(title="Northeast has the highest median age",
+       subtitle = "Median age by state", 
+       caption="Source: US Census Bureau 2019", 
+       fill="Median age")
+us_age_map 
+
+```
 
 ## Correlation Analysis 
 
@@ -894,6 +932,7 @@ profiles_cleaned %>%
 # Customer cluster analysis 
 
 QUESTION: IS THIS JUST WINE CONSUMERS? --> need to identify high spent/high profit customers 
+IS THERE ALSO A WAY TO ONLY INCLUDE SOME OF THE VARIABLES FOR CLUSTREING (AGE; EDUCATION; MARITAL STAUTS; INCOME; CHILDRES) --> only to ones we use in customer analysis  --> happy to talk about this 
 
 
 ```{r cleaning data }
