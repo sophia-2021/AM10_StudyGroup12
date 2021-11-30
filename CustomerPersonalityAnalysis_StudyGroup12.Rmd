@@ -172,9 +172,6 @@ custom_layout <-   theme_minimal() + theme(
 
 # Economic Indicator Analysis 
 
-SOPHIA'S PART --> WILL CLEAN UP AND COMMENT MORE 
-
-
 ## Loading and cleaning economic indicator data 
 
 Before we can start with the analysis, we load and clean the data. 
@@ -239,7 +236,7 @@ gdp_states_sf <- st_as_sf(gdp_states_2020,
                           crs=4326) 
 
 
-gdp_states_2020_temp <- gdp_states_2020 %>%  select(geo_name, GDP) 
+gdp_states_2020_temp <- gdp_states_2020 %>% select(geo_name, GDP) 
 #glimpse(gdp_states_sf)
 
 #Create dataframe with GDP per capita 
@@ -308,8 +305,6 @@ eco_ind_us <- gdp_regions %>%
   #left_join(Inc_pc_us_short, by="year") %>%
   left_join(pce_pc_short, by="year") %>% 
   pivot_longer(cols=2:3, names_to="indicator", values_to="value")
-
-
 
 #Plot graphs with both indicators 
   ggplot(eco_ind_us, aes(x=year, y=value, group=indicator, color=indicator)) + 
@@ -428,6 +423,8 @@ pce_alc %>%  filter(geo_name=="United States") %>%
     inherit.aes = FALSE)
 
 ```
+
+
 
 ## GDP and GDP growth per US region 
 
