@@ -1,7 +1,7 @@
 ---
 title: "CustomerPersonalityAnalysis_StudyGroup12"
 author: "Akshat Kacheria, Asli Ceren Memis, Jelena Savic, Shengcheng Liu, Shuhan Li, Sophia Kalusche "
-date: "11/9/2021"
+date: "11/30/2021"
 output: html_document
 ---
 
@@ -89,9 +89,6 @@ custom_layout <-   theme_minimal() + theme(
 
 # Economic Indicator Analysis 
 
-SOPHIA'S PART --> WILL CLEAN UP AND COMMENT MORE 
-
-
 ## Loading and cleaning economic indicator data 
 
 Before we can start with the analysis, we load and clean the data. 
@@ -157,7 +154,7 @@ gdp_states_sf <- st_as_sf(gdp_states_2020,
                           crs=4326) 
 
 
-gdp_states_2020_temp <- gdp_states_2020 %>%  select(geo_name, GDP) 
+gdp_states_2020_temp <- gdp_states_2020 %>% select(geo_name, GDP) 
 #glimpse(gdp_states_sf)
 
 #Create dataframe with GDP per capita 
@@ -217,7 +214,12 @@ pce_pc_short <- pce_total_annual %>% select(year, exp_percapita)
 
 ## GDP and PCE over time 
 
+<<<<<<< HEAD
 First, we want to get a feeling of how GDP and PCE (Personal Consumption Expenditure) is developing over time in the US to get a better feeling of the economic situation in the US. 
+=======
+First, we want to get a feeling of who GDP and PCE (Personal Consumption Expenditure) is developing over time in the US to get a better feeling of the economic situation in the US. 
+
+>>>>>>> 010c1e99dc35f994aed1259f28f0c96818c1acdc
 ```{r, GDP US Graphs, message=FALSE, fig.width=14, fig.height=8}
 
 #Join GDP, PCE data 
@@ -227,8 +229,6 @@ eco_ind_us <- gdp_regions %>%
   #left_join(Inc_pc_us_short, by="year") %>%
   left_join(pce_pc_short, by="year") %>% 
   pivot_longer(cols=2:3, names_to="indicator", values_to="value")
-
-
 
 #Plot graphs with both indicators 
   ggplot(eco_ind_us, aes(x=year, y=value, group=indicator, color=indicator)) + 
@@ -346,6 +346,72 @@ pce_alc %>%  filter(geo_name=="United States") %>%
     inherit.aes = FALSE)
 
 ```
+```{r, Alchol beverage pct and GDP growth, message=FALSE, fig.width=14, fig.height=8}  
+
+us_gdp <- gdp_regions %>% 
+  filter(geo_name == "United States") %>%  
+  select(year, GDP) %>%  
+  mutate(prev_year_GDP=dplyr::lag(GDP,1), growth_annual_GDP=(GDP-prev_year_GDP)/prev_year_GDP*100)
+
+
+alc_prop_of_pce <- pce_alc %>%  
+  filter(geo_name=="United States", !is.na(Alc_pct)) %>%  
+  select(geo_name,year, Alc_pct) %>% ungroup() %>% 
+  mutate(prev_year_alc_prop=dplyr::lag(Alc_pct,1), growth_annual_alc_pct=(Alc_pct-prev_year_alc_prop)/prev_year_alc_prop*100)
+
+us_gdp_alcohol_pct <-  us_gdp %>% left_join(alc_prop_of_pce, by="year") %>% filter(year!=1997) %>%  select(year, growth_annual_GDP, growth_annual_alc_pct) %>% pivot_longer(2:3, values_to="growth_rate", names_to="type")
+
+ggplot(us_gdp_alcohol_pct, aes(x=year, y=growth_rate, group=type, color=type)) + 
+  
+  geom_rect(aes(xmin=2008,xmax=2009.5),
+            ymin=-Inf,ymax=Inf, fill="#E5E6E8", color="#E5E6E8", alpha=0.035) +
+  geom_rect(aes(xmin=2019.5,xmax=2021),
+            ymin=-Inf,ymax=Inf, fill="#E5E6E8", color="#E5E6E8", alpha=0.035) +
+  geom_rect(aes(xmin=2000,xmax=2002),
+           ymin=-Inf,ymax=Inf, fill="#E5E6E8", color="#E5E6E8", alpha=0.035) +
+  geom_line(size=1.2) +
+  scale_color_manual(values = c("#8C1414", "#024B7C"), 
+                       labels=c("Alcohol spending", "GDP")) + 
+  geom_hline(yintercept=0, linetype="dashed", color = "black") +
+  
+  custom_layout + 
+  labs(title="Proportion of alcohol spending increases in times of crisis",
+       subtitle = "Proportion of alcohol beverage spending and GDPO growth  over time in USA", 
+       x="Time",
+       y="Annual Growth",
+       caption="Source: Bureau of Economic Analysis GDP & Personal Consumption Expenditures Data 1997-2020", 
+       color= "Annual growth")+
+  
+    # add the text label on the graph
+  geom_text(
+    data = data.frame(x = 2008.75, y = 18, label = "Financial Crisis"),
+    aes(x = x, y = y, label = label),
+    colour="grey15",
+    family="PT Sans",
+    hjust = 0.5,
+    lineheight = .8,
+    inherit.aes = FALSE) +
+    
+     geom_text(
+    data = data.frame(x = 2020.2, y = 18, label = "Covid-19"),
+    aes(x = x, y = y, label = label),
+    colour="grey15",
+    family="PT Sans",
+    hjust = 0.5,
+    lineheight = .8,
+    inherit.aes = FALSE) +
+  
+     geom_text(
+    data = data.frame(x = 2001, y = 18, label = "Dot-com bubble"),
+    aes(x = x, y = y, label = label),
+    colour="grey15",
+    family="PT Sans",
+    hjust = 0.5,
+    lineheight = .8,
+    inherit.aes = FALSE)
+
+```
+
 
 ## GDP and GDP growth per US region 
 
@@ -657,8 +723,6 @@ customer_food_basked %>%
 We know now that the customers of the retailer do appear to purchase a lot on wine, hence we want to use the data to gain more insights on what characteristics the high wine spenders have, which we could then ultimately use to target our customers. From the graphs below we can see that especially income and age appear to impact the median spending on wine consumption. This already gives us a first indication of what target customers we could focus on. 
 
 ```{r, rconsumer personality analysis data 2, fig.width=8, fig.height=6}
-#TO DOS::
-#ANNOTATION !!!
 
 #We will use median as the wine spending data appears to be highly skewed right
 
@@ -853,10 +917,13 @@ profiles_cleaned %>%
 
 # Customer cluster analysis 
 
+<<<<<<< HEAD
 QUESTION: IS THIS JUST WINE CONSUMERS? --> need to identify high spent/high profit customers 
 IS THERE ALSO A WAY TO ONLY INCLUDE SOME OF THE VARIABLES FOR CLUSTREING (AGE; EDUCATION; MARITAL STAUTS; INCOME; CHILDREN) --> only to ones we use in customer analysis  --> happy to talk about this 
 
 ## Preparing customer data for clustering
+=======
+>>>>>>> 010c1e99dc35f994aed1259f28f0c96818c1acdc
 ```{r cleaning data customer analysis 1}
 #removing NAs
 df1=na.omit(profile_clean)
