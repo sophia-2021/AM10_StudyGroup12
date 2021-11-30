@@ -5,13 +5,29 @@ date: "11/30/2021"
 output: html_document
 ---
 
-# Introduction
+# Executive summary 
 
-ADD PARAGRAPH HERE 
+For our final group project, we wanted to help a private wine trader from Chile to enter the US market. He has no prior business knowledge of the US market and hence we aimed to answer some key questions with the help of different data sets and visualizations. 
 
-# Background
+Some of the key topics we address is: 
 
-ADD PARAGRAPH AND ALL DATA SOURCES HERE 
+* What influences consumption and specifically what influences wine consumption?
+* How was wine consumption changed over time?
+* How can you identify high wine spending customers?
+* Where should you focus geographically to sell wine? 
+
+While we do not exhaust all possible factors of interest, we generate some ideas and starting poitns for further hypothesis testing for a more detailed business plan. 
+
+For our analysis we used the following data sources: 
+
+* [Bureau of Economic Analysis(Data for GDP and PCE)](https://apps.bea.gov/regional/downloadzip.cfm)
+* [US Census Data (population)](https://www.kaggle.com/peretzcohen/2019-census-us-population-data-by-state)
+* [Customer Personality Analysis Dataset](https://www.kaggle.com/imakash3011/customer-personality-analysis)
+* [Wine Institue Data](https://www.statista.com/statistics/233722/total-wine-consumption-of-the-us-by-wine-type/)
+
+
+We find that wine consumption has significantly grown over last few years in the US. Even during times of crisis, wine consumption goes up, however it is noteworthy that customers appear to substitute quality for quantity in times of crisis, given that retail value and premium demand actually decreased. 
+Our main findings are that New England is a good target region for selling wine given that it has comparatively high GDP per capita, high wine consumption per capita and high median age. Through clustering we identified some key characteristics that determine high wine spenders, for example income, age, education is positively related to wine spending while having small children at home is negatively related to wine spending. 
 
 ```{r setup, include=FALSE, warning=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -22,19 +38,17 @@ library(tidyverse) # the usual stuff: dplyr, readr, and other goodies
 library(lubridate) # to handle dates
 library(GGally) # for correlation-scatterplot matrix
 library(car) # vif() function to check for multicolinearity
-library(ggfortify) # to produce residual diagnostic plots
-library(rsample) # to split dataframe in training- & testing sets
-library(here) # to read files and organise data
-library(janitor) # clean_names()
-library(broom) # use broom:augment() to get tidy table with regression output, residuals, etc
-library(huxtable) # to get summary table of all models produced
-library(caret) # to train more advanced models (k-fold cross-validation, stepwise regression, LASSO)
-library(zoo) #to allow for time series operations
-
+library(ggfortify) 
+library(rsample) 
+library(here) 
+library(janitor) 
+library(broom)
+library(huxtable) 
+library(caret) 
+library(zoo) 
 library(vroom)
 library(skimr)
 library(sf)
-
 library(extrafont)
 library(ggtext)
 library(ggrepel)
@@ -43,27 +57,7 @@ library(gghighlight)
 library(skimr)
 ```
 
-# Clean the customer data
-```{r cleaning data customer data}
-#cleanign data
-marketing_campaign <- read_delim("marketing_campaign.csv", 
-    "\t", escape_double = FALSE, trim_ws = TRUE)
-#View(marketing_campaign)
 
-glimpse(marketing_campaign)
-
-skim(marketing_campaign)
-#we see that income column has 24 NA values, we can remove those rows
-#we also notice that a few year of births are impractically old, we remove all years before 1925
-
-profile_clean <- marketing_campaign %>% 
-  janitor::clean_names() %>% 
-  drop_na(income) %>% 
-  filter(year_birth > 1925)
-
-skimr::skim(profile_clean)
-
-```
 
 # Create own graph template
 ```{r create own graphing template, message=FALSE, warning=FALSE, error=FALSE}
@@ -121,7 +115,8 @@ far_west <- c("Alaska", "California", "Hawaii", "Nevada", "Oregon", "Washington"
 
 ```
 
-### Cleaning GDP data and creating dataframes with geographical features
+First we need to clean the data and toransform it into data frames we can use for our analysis. 
+
 ```{r, load_cleaning, message=FALSE}
 gdp_clean <- gdp %>% 
   
@@ -186,6 +181,7 @@ gdp_pc_regions <- gdp_regions %>%
 ```
 
 ### Cleaning PCE data
+
 ```{r, clean pce, message=FALSE, warning=FALSE, error=FALSE, fig.width=12, fig.hight=14}
 
 #glimpse(pce)
@@ -214,10 +210,8 @@ pce_pc_short <- pce_total_annual %>% select(year, exp_percapita)
 
 ## GDP and PCE over time 
 
-<<<<<<< HEAD
 First, we want to get a feeling of how GDP and PCE (Personal Consumption Expenditure) is developing over time in the US to get a better feeling of the economic situation in the US. 
-=======
-First, we want to get a feeling of who GDP and PCE (Personal Consumption Expenditure) is developing over time in the US to get a better feeling of the economic situation in the US. 
+
 
 ```{r, GDP US Graphs, message=FALSE, fig.width=14, fig.height=8}
 
@@ -652,7 +646,6 @@ us_wine_map_pc
 
 ```
 
-
 # Retailer Data Analysis
 
 We move on to analyse the data of an retailer to gain more information about what customers spend money on wine and how we could use that data to target specific customer groups. 
@@ -920,7 +913,6 @@ profiles_cleaned %>%
 
 Next, we continue with a cluster analysis of the customers to actually learn more about the characteristics that influences their sending. 
 
-=======
 
 ```{r cleaning data customer analysis 1}
 #removing NAs

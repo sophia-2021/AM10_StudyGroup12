@@ -1,4 +1,30 @@
 # AM10_StudyGroup12
 Final group project for AM10 - Customer Personality Analysis
 
-For our final group project, we decided to analyze the Customer Personality Analysis dataset published by Akash Patel on Kaggle. We aim to analyze the customer base based on demographic variables as well as customer specific past purchasing behavior for items and location purchased. After this initial descriptive and clustering analysis, we want to analyze the effectiveness of different marketing promotions and campaigns for the different customer cluster to allow the company to better address and communicate to their future customers. This project will not only help us to draw better inference about the existing customer but will allow the company to better target in the future, leading to a potential improvement of retention and acquisition of customer. 
+## Introduction
+For our final group project, we wanted to help a private wine trader from Chile to enter the US market. He has no prior business knowledge of the US market and hence we aimed to answer some key questions with the help of different data sets and visualizations. 
+
+
+## Key questions
+Some of the key topics we address is: 
+
+* What influences consumption and specifically what influences wine consumption?
+* How was wine consumption changed over time?
+* How can you identify high wine spending customers?
+* Where should you focus geographically to sell wine? 
+
+While we do not exhaust all possible factors of interest, we generate some ideas and starting poitns for further hypothesis testing for a more detailed business plan. 
+
+
+## Data Sources
+For our analysis we used the following main data sources: 
+
+* [Bureau of Economic Analysis(Data for GDP and PCE)](https://apps.bea.gov/regional/downloadzip.cfm)
+* [US Census Data (population)](https://www.kaggle.com/peretzcohen/2019-census-us-population-data-by-state)
+* [Customer Personality Analysis Dataset](https://www.kaggle.com/imakash3011/customer-personality-analysis)
+* [Wine Institue Data](https://www.statista.com/statistics/233722/total-wine-consumption-of-the-us-by-wine-type/)
+
+
+## Key findings
+We find that wine consumption has significantly grown over last few years in the US. Even during times of crisis, wine consumption goes up, however it is noteworthy that customers appear to substitute quality for quantity in times of crisis, given that retail value and premium demand actually decreased. 
+Our main findings are that New England is a good target region for selling wine given that it has comparatively high GDP per capita, high wine consumption per capita and high median age. Through clustering we identified some key characteristics that determine high wine spenders, for example income, age, education is positively related to wine spending while having small children at home is negatively related to wine spending. 
