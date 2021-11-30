@@ -376,7 +376,7 @@ ggplot(us_gdp_alcohol_pct, aes(x=year, y=growth_rate, group=type, color=type)) +
   
   custom_layout + 
   labs(title="Proportion of alcohol spending increases in times of crisis",
-       subtitle = "Proportion of alcohol beverage spending and GDPO growth  over time in USA", 
+       subtitle = "Proportion of alcohol beverage spending and GDP growth  over time in USA", 
        x="Time",
        y="Annual Growth",
        caption="Source: Bureau of Economic Analysis GDP & Personal Consumption Expenditures Data 1997-2020", 
@@ -568,7 +568,7 @@ wine_total_us_clean %>%  ggplot(aes(x=year, y=consumption)) +
   geom_col(fill="#5C0303") + 
   custom_layout + 
   ylim(0, 1250)+
-  labs(title="Wine consumption expereinced high growth over the last 15 years",
+  labs(title="Wine consumption experienced high growth over the last 15 years",
        subtitle = "Total wine consumption in million gallons (2005-2020)", 
        caption="Source: Wine Institute - Wine consumption survery", 
        y="Consumption in million gallons") +
