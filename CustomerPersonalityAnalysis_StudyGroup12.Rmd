@@ -339,7 +339,7 @@ pce_alc %>%  filter(geo_name=="United States") %>%
     inherit.aes = FALSE)
 
 ```
-```{r, Alchol beverage pct and GDP growth, message=FALSE, fig.width=12, fig.height=8}  
+```{r, Alchol beverage pct and GDP growth, message=FALSE, fig.width=14, fig.height=8}  
 
 us_gdp <- gdp_regions %>% 
   filter(geo_name == "United States") %>%  
