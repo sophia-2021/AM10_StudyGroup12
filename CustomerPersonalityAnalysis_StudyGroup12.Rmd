@@ -219,7 +219,6 @@ First, we want to get a feeling of how GDP and PCE (Personal Consumption Expendi
 =======
 First, we want to get a feeling of who GDP and PCE (Personal Consumption Expenditure) is developing over time in the US to get a better feeling of the economic situation in the US. 
 
->>>>>>> 010c1e99dc35f994aed1259f28f0c96818c1acdc
 ```{r, GDP US Graphs, message=FALSE, fig.width=14, fig.height=8}
 
 #Join GDP, PCE data 
@@ -284,6 +283,7 @@ eco_ind_us <- gdp_regions %>%
 ## Alcohol beverage consumption expenditure 
 
 To evaluate if wine is a good industry to go into, we use the PCE data to get a first hypothesis. We calculate the proportion of alcohol spending of total consumer spending over time to get a first indication for this. 
+
 
 ```{r, Alchol beverage , message=FALSE, fig.width=12, fig.height=8}  
 
@@ -376,7 +376,7 @@ ggplot(us_gdp_alcohol_pct, aes(x=year, y=growth_rate, group=type, color=type)) +
   
   custom_layout + 
   labs(title="Proportion of alcohol spending increases in times of crisis",
-       subtitle = "Proportion of alcohol beverage spending and GDP growth  over time in USA", 
+       subtitle = "Proportion of alcohol beverage spending and GDP growth over time in USA", 
        x="Time",
        y="Annual Growth",
        caption="Source: Bureau of Economic Analysis GDP & Personal Consumption Expenditures Data 1997-2020", 
@@ -917,13 +917,11 @@ profiles_cleaned %>%
 
 # Customer cluster analysis 
 
-<<<<<<< HEAD
-QUESTION: IS THIS JUST WINE CONSUMERS? --> need to identify high spent/high profit customers 
-IS THERE ALSO A WAY TO ONLY INCLUDE SOME OF THE VARIABLES FOR CLUSTREING (AGE; EDUCATION; MARITAL STAUTS; INCOME; CHILDREN) --> only to ones we use in customer analysis  --> happy to talk about this 
 
-## Preparing customer data for clustering
+Next, we continue with a cluster analysis of the customers to actually learn more about the characteristics that influences their sending. 
+
 =======
->>>>>>> 010c1e99dc35f994aed1259f28f0c96818c1acdc
+
 ```{r cleaning data customer analysis 1}
 #removing NAs
 df1=na.omit(profile_clean)
@@ -953,7 +951,8 @@ df1<-df1 %>%
 
 ```
 
-## Transforming the data and determining the optimal K value
+We transform  the data and determining the optimal K value
+
 ```{r transforming data }
 
 #scale the data 
@@ -964,7 +963,10 @@ library(factoextra)
 fviz_nbclust(df1,kmeans,method="wss")+geom_vline(xintercept=2,linetype=2) + custom_layout
 
 ```
-## Have a look at clustered data and create new tables for later analysis
+
+We can look at clustered data aand see that there are two main clusters we can group the customers by.
+
+
 ```{r plot clusters}
 
 set.seed(123)
@@ -990,7 +992,10 @@ cluster_centers_t <- cluster_centers %>% gather(variable, value, -cluster, facto
 ```
 
 ## Visualizing cluster centers
-```{r plot cluster centers, fig.width=6, fig.height=4}
+
+The cluster centers actually help us to determine the characteristics that differentiation the two customer groups. 
+
+```{r plot cluster centers, fig.width=8, fig.height=6}
 #plot the cluster centers
 graphkmeans_2clusters <- ggplot(cluster_centers_t, aes(x=variable, y=value))+
   geom_line(aes(color=cluster, group=cluster), linetype="dashed", size=1)+
@@ -1000,7 +1005,7 @@ graphkmeans_2clusters <- ggplot(cluster_centers_t, aes(x=variable, y=value))+
   theme(text = element_text(size=10),
         axis.text.x = element_text(angle=45, hjust=1),
         plot.title = element_text(face = "bold"))+
-  ggtitle("Consumers are separated on income, age and \namout spent on wine", subtitle="Separation of 2 clusters based on different consumer features") +
+  ggtitle("Consumers are separated on income, age and amout spent on wine", subtitle="Separation of 2 clusters based on different consumer features") +
   scale_color_manual(values=c("tomato", "cornflowerblue"))+
   labs(y="", x="")
 graphkmeans_2clusters
