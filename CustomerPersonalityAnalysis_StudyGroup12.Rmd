@@ -212,6 +212,7 @@ pce_pc_short <- pce_total_annual %>% select(year, exp_percapita)
 ## GDP and PCE over time 
 
 First, we want to get a feeling of who GDP and PCE (Personal Consumption Expenditure) is developing over time in the US to get a better feeling of the economic situation in the US. 
+
 ```{r, GDP US Graphs, message=FALSE, fig.width=14, fig.height=8}
 
 #Join GDP, PCE data 
@@ -716,8 +717,6 @@ customer_food_basked %>%
 We know now that the customers of the retailer do appear to purchase a lot on wine, hence we want to use the data to gain more insights on what characteristics the high wine spenders have, which we could then ultimately use to target our customers. From the graphs below we can see that especially income and age appear to impact the median spending on wine consumption. This already gives us a first indication of what target customers we could focus on. 
 
 ```{r, rconsumer personality analysis data 2, fig.width=8, fig.height=6}
-#TO DOS::
-#ANNOTATION !!!
 
 #We will use median as the wine spending data appears to be highly skewed right
 
@@ -910,10 +909,6 @@ profiles_cleaned %>%
 ```
 
 # Customer cluster analysis 
-
-QUESTION: IS THIS JUST WINE CONSUMERS? --> need to identify high spent/high profit customers 
-IS THERE ALSO A WAY TO ONLY INCLUDE SOME OF THE VARIABLES FOR CLUSTREING (AGE; EDUCATION; MARITAL STAUTS; INCOME; CHILDREN) --> only to ones we use in customer analysis  --> happy to talk about this 
-
 
 ```{r cleaning data customer analysis 1}
 #removing NAs
